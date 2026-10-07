@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="[Add group members]">
-<meta name="dcterms.date" content="2026-10-03">
+<meta name="dcterms.date" content="2026-10-07">
 
 <title>Writer identification in simulated handwriting</title>
 <style>
@@ -141,7 +141,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 3, 2026</p>
+      <p class="date">October 7, 2026</p>
     </div>
   </div>
   
@@ -167,15 +167,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="introduction" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
-<p>Writer identification asks whether an image of a digit can be assigned to the person who wrote it. This report compares two neural-network approaches on a simulated dataset: a convolutional neural network (CNN) that predicts one of 20 writer IDs, and a Siamese network trained to compare two images and decide whether they came from the same writer.</p>
-<p>The dataset contains 25,000 grayscale images of size 28 × 28. Each of 20 simulated writers wrote digits 0–4 in five recording sessions, with 50 repetitions of each writer–digit–session combination. The data are simulated rather than samples of natural handwriting; conclusions therefore concern this dataset and should not be treated as evidence of performance on real handwriting.</p>
-<p>We distinguish two generalization questions. For the CNN, we test whether writer identification transfers to a later session for writers represented during training. For the Siamese model, we test whether a learned matching rule transfers to writers excluded from its training pairs. These are different tasks and their scores are not directly interchangeable.</p>
+<p>This assignment looks at whether a model can tell which person wrote a digit from a small image. We worked with a simulated dataset of 25,000 grayscale images, each measuring 28 × 28 pixels. There are 20 fictional writers, and each writer produced digits 0 to 4 across five sessions.</p>
+<p>We tested two different approaches. First, we trained a convolutional neural network (CNN) to classify each image into one of 20 writer IDs. Second, we trained a Siamese network to compare two images and decide whether they came from the same writer. These are not the same task, so we should not treat their scores as directly comparable.</p>
+<p>It is important to be realistic here: this is a simulated dataset, not real handwriting. That means the results tell us how these models behave on this dataset, not how they would perform on actual handwriting in everyday settings.</p>
 </section>
 <section id="data-exploration" class="level1" data-number="2">
 <h1 data-number="2"><span class="header-section-number">2</span> 1. Data exploration</h1>
 <section id="structure-and-balance" class="level2" data-number="2.1">
 <h2 data-number="2.1" class="anchored" data-anchor-id="structure-and-balance"><span class="header-section-number">2.1</span> Structure and balance</h2>
-<p>The checks below confirm the dimensions, pixel range, and number of examples in each metadata group. Counts other than the expected balanced design should be investigated before fitting models.</p>
+<p>Before fitting any model, it helps to check the basic structure of the data. We confirmed the image dimensions, the range of pixel values, and the number of examples for each writer, digit, and session. The design is meant to be balanced, so any unusual counts would be a warning sign before training begins.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 25000    28    28     1</code></pre>
@@ -199,7 +199,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-across-writers-and-digits" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="examples-across-writers-and-digits"><span class="header-section-number">2.2</span> Examples across writers and digits</h2>
-<p>The plot shows one randomly selected example for each combination of five sampled writers and the five digits, all from session 1. The next plot holds writer and digit fixed while showing examples from each session. Inspect these figures after rendering and describe visible similarities and differences; the code does not assume in advance which digits are most distinctive.</p>
+<p>The figures below show a few sample images so we can look for patterns by eye. The first plot gives one example from five writers for each digit, all from session 1. The second plot keeps the writer and digit fixed and shows how that same writer’s style changes across sessions. This is useful because handwriting is not always perfectly identical even when the same person writes the same digit.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -218,15 +218,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>In the rendered report, describe any visible variation in stroke shape, slant, thickness, spacing, or consistency across sessions. Also note any limitations visible in the images. Because the data are simulated, the design may not capture the full range of natural writing variation, scanning conditions, or demographic diversity.</p>
+<p>When we look at the rendered images, we should pay attention to things like stroke shape, slant, thickness, spacing, and how consistent the writing is across sessions. Some digits may look cleaner or more distinctive than others, while others may appear more variable. We also need to remember that these are simulated images, so they are cleaner and more structured than real handwriting and do not fully represent natural variation in pen pressure, scan quality, or writing habits.</p>
 </section>
 </section>
 <section id="cnn-writer-identification" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> 2. CNN writer identification</h1>
 <section id="split-and-model" class="level2" data-number="3.1">
 <h2 data-number="3.1" class="anchored" data-anchor-id="split-and-model"><span class="header-section-number">3.1</span> Split and model</h2>
-<p>The CNN predicts writer IDs 0–19. We train on sessions 1–3, select the dropout setting using session 4, and report the final evaluation on session 5. All writers occur in each split, which is necessary for this closed-set classification task: a 20-class classifier cannot predict a writer class it never encountered during training. Holding out sessions prevents near-duplicate observations from the same recording session appearing on both sides of the evaluation and measures transfer across sessions for known writers.</p>
-<p>We compare two dropout settings as a small, prespecified hyperparameter search. Each candidate is assessed on the same validation session; session 5 is not used for model or threshold selection.</p>
+<p>The CNN was trained to predict one of 20 writer IDs. We used sessions 1–3 for training, session 4 for choosing the dropout value, and session 5 for the final test result. This is a standard way to test whether the model can still recognise the same writers when the writing comes from a later session.</p>
+<p>This split matters because all 20 writers are present in every set. That is necessary for a closed-set classification problem: the model cannot correctly identify a writer it never saw during training. By holding out an entire session, we avoid testing on nearly identical samples from the same recording session and instead check whether the model generalises to later writing samples.</p>
+<p>We compared two dropout values as a small, planned hyperparameter check. The model selection was done using the validation session only, and session 5 remained untouched until the final evaluation.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -290,8 +291,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="results-and-interpretation" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="results-and-interpretation"><span class="header-section-number">3.2</span> Results and interpretation</h2>
-<p>The overall test accuracy is 0.603; chance accuracy for 20 equally represented classes is 0.05. Accuracy is the fraction of session-5 images assigned to the correct writer. In this run, digit 3 had the highest digit-specific accuracy (0.683), while digit 1 had the lowest (0.498). These are descriptive results from one split and one initialization; discuss them alongside the example images rather than treating the ranking as an inherent property of those digits.</p>
-<p>This is a closed-set result: the test writers are known to the model, but their session-5 samples are held out. It does not estimate performance on a new person. Accuracy can also hide which writers are confused with one another; use the confusion matrix below to identify any systematic errors.</p>
+<p>The CNN achieved an overall test accuracy of 0.603 on session 5. For 20 equally balanced classes, random guessing would give a chance accuracy of 0.05. In simple terms, this means the model performed well above chance, but the result should still be read carefully.</p>
+<p>The digit-specific results were not identical across digits. In this run, digit 3 performed best (0.683), while digit 1 was the weakest (0.498). These are descriptive results from one split and one training run, so they should be considered alongside the sample images rather than treated as a universal statement that one digit is always easier to classify.</p>
+<p>This is a closed-set result: the test writers were already known to the model, but their session-5 samples were new to it. That means it does not tell us how the model would do on a completely new person. The confusion matrix below is also useful because raw accuracy can hide patterns such as certain writers being confused with one another.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -814,12 +816,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1 data-number="4"><span class="header-section-number">4</span> 3. Siamese same-writer matching</h1>
 <section id="pair-construction-and-evaluation-split" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="pair-construction-and-evaluation-split"><span class="header-section-number">4.1</span> Pair construction and evaluation split</h2>
-<p>The Siamese experiment uses writer-disjoint splits: 12 writers for training, four for validation, and four for testing. Thus no writer represented in validation or test pairs contributes images to training pairs. This evaluates whether the matching rule transfers to writers absent from its training pairs; it is distinct from the CNN’s known-writer session-transfer question.</p>
-<p>Each pair contains the same digit on both sides, controlling digit identity. Positive pairs use two distinct images from the same writer and digit; negative pairs use images from two different writers but the same digit. The training, validation, and test pair sets are balanced between positive and negative labels. A pair’s session combination is sampled from the available images, so the test set includes session variation.</p>
+<p>For the Siamese model, we used writer-disjoint groups: 12 writers for training, four for validation, and four for testing. That means no writer appearing in the validation or test pairs was used in the training pairs. This is a different question from the CNN: here we are asking whether the model can match handwriting from writers it has never seen before.</p>
+<p>Each pair uses the same digit on both sides, which helps control for digit identity. Positive pairs contain two different images from the same writer and the same digit, while negative pairs contain images from two different writers but the same digit. The training, validation, and test sets were balanced between positive and negative labels. Because the pair selection sampled across the available sessions, the test set also includes some session variation.</p>
 </section>
 <section id="network-and-contrastive-loss" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="network-and-contrastive-loss"><span class="header-section-number">4.2</span> Network and contrastive loss</h2>
-<p>Both branches share one encoder. The network is trained with contrastive loss: same-writer pairs (label 1) are encouraged to have small embedding distances, while different-writer pairs (label 0) are penalized when their distance is below a margin of 1. The model outputs the difference between the two embeddings; the loss and evaluation convert this to Euclidean distance.</p>
+<p>Both sides of the network share the same encoder. The model is trained with contrastive loss, which encourages same-writer pairs to sit close together in the embedding space and pushes different-writer pairs further apart. We used a margin of 1, meaning that pairs that are too close when they should be different are penalised. The final distance between two images is computed from the Euclidean distance between their learned embeddings.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -857,20 +859,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="results-and-interpretation-1" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="results-and-interpretation-1"><span class="header-section-number">4.3</span> Results and interpretation</h2>
-<p>On pairs from writers excluded from model training, test balanced accuracy is 0.841 at a distance threshold selected using validation writers only. Sensitivity is the fraction of same-writer pairs correctly accepted; specificity is the fraction of different-writer pairs correctly rejected. Balanced accuracy gives equal weight to these two rates. The threshold is selected on validation data and then held fixed for test evaluation.</p>
-<p>This matching experiment is closer to verification of previously unseen writers than the CNN experiment, but it uses only four test writers and sampled pairs. Results may vary with the writer split and pair sample. They should be interpreted alongside the pair-construction protocol, not as a universal biometric error rate.</p>
+<p>On the test writers that were held out from training, the Siamese model reached a balanced accuracy of 0.841 using a distance threshold selected only from the validation writers. In other words, it was able to tell when two images were likely written by the same person, while also rejecting pairs from different writers.</p>
+<p>Sensitivity here means the proportion of same-writer pairs that were correctly accepted, while specificity means the proportion of different-writer pairs that were correctly rejected. Balanced accuracy gives equal importance to both, which is useful here because we do not want a model that is very good at one class but poor at the other.</p>
+<p>This experiment is closer to a verification task on unseen writers than the CNN task. However, it is still based on only four test writers and a sampled set of pairs, so the result should be read as a useful indicator rather than a universal measure of real-world performance.</p>
 </section>
 </section>
 <section id="hyperparameter-sensitivity" class="level1" data-number="5">
 <h1 data-number="5"><span class="header-section-number">5</span> 4. Hyperparameter sensitivity</h1>
-<p>For the CNN, the two dropout candidates and their session-4 validation accuracies are reported above. The chosen model is the one with the higher validation accuracy. The test set is evaluated only after selection. The difference between the two validation scores provides a limited sensitivity check; it is not a comprehensive search and does not account for variation across random seeds.</p>
-<p>For the Siamese model, we fixed the architecture and contrastive margin to keep the comparison bounded. A further study could vary the margin or embedding dimension, but would need to select settings only on validation writers. Avoid repeated test-set tuning.</p>
+<p>For the CNN, we compared two dropout values and recorded their validation accuracy on session 4. The model with the higher validation score was selected, and the session-5 test set was only used after that decision. This gives a simple sensitivity check, but it is limited because we only tested two settings and used one random seed.</p>
+<p>For the Siamese model, we kept the architecture and contrastive margin fixed so the comparison stayed manageable. A more detailed study could explore different margins or embedding sizes, but any such tuning would need to be done only on the validation writers. We should avoid adjusting the model based on the test writers.</p>
 </section>
 <section id="comparison-and-discussion" class="level1" data-number="6">
 <h1 data-number="6"><span class="header-section-number">6</span> 5. Comparison and discussion</h1>
-<p>The CNN answers “which known writer produced this image?” and the Siamese model answers “do these two images share a writer?” The CNN test accuracy (0.603) is measured on later-session images from known writers; the Siamese balanced accuracy (0.841) is measured on pairs from writers excluded from training. Because the split designs and prediction targets differ, the scores should not be ranked as though they measured identical performance.</p>
-<p>Use the digit-specific CNN results to identify which digits were easier for writer classification in this experiment. Explain the observed pattern using the image examples, while noting that each digit has its own geometry and that the same-digit pairing in the Siamese task deliberately controls for digit identity. Do not claim that a digit is inherently more writer-informative beyond this simulated dataset and evaluation.</p>
-<p>The CNN split places sessions 1–3 in training and session 5 in testing, with session 4 for model selection. The Siamese pair construction samples images across the available sessions for the held-out writers. Discuss whether the displayed samples suggest session-related changes, and be cautious: this design does not provide a separate numerical estimate of the effect of session on Siamese matching. A direct session-effect analysis would require a prespecified comparison of within-session and cross-session pairs.</p>
+<p>The two models answer slightly different questions. The CNN asks: “Which known writer produced this image?” The Siamese model asks: “Do these two images likely come from the same writer?” Because of this, the CNN score (0.603) and the Siamese balanced accuracy (0.841) are not directly interchangeable.</p>
+<p>Looking at the digit-specific CNN results helps us see which digits were easier to classify in this experiment. The pattern should be explained using the example images, because each digit has its own shape and some are naturally more distinctive than others. The Siamese task also controls for digit identity by comparing images of the same digit only, so it is not measuring general digit difficulty in the same way.</p>
+<p>The CNN split used sessions 1–3 for training, session 4 for validation, and session 5 for testing. The Siamese model, by contrast, sampled pairs across available sessions for withheld writers. Looking at the sample images, we should consider whether there are visible session effects, but we should be careful not to overstate this. This design was not built to give a separate numerical estimate of session effect, and a proper session analysis would need a more explicit within-session versus cross-session comparison.</p>
 <section id="limitations" class="level2" data-number="6.1">
 <h2 data-number="6.1" class="anchored" data-anchor-id="limitations"><span class="header-section-number">6.1</span> Limitations</h2>
 <ul>
@@ -890,90 +893,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="conclusion" class="level1" data-number="8">
 <h1 data-number="8"><span class="header-section-number">8</span> Conclusion</h1>
-<p>This analysis compares closed-set writer classification with pairwise same-writer matching on simulated 28 × 28 digit images. The reported results quantify performance under explicit session-based and writer-disjoint evaluation designs. The final interpretation should be grounded in the rendered examples and computed tables, and should avoid extrapolating beyond the simulated data.</p>
+<p>This assignment compared two different ways of identifying writers from simulated handwriting images. The CNN was used to classify a digit image into one of 20 known writers, while the Siamese model was used to decide whether two images were likely written by the same person. The results show that both approaches can work on this dataset, but the performance depends heavily on the evaluation setup and the nature of the task.</p>
+<p>The main lesson is that these models are not directly comparable because they are solving different problems. The CNN tests recognition of known writers across later sessions, while the Siamese model tests matching ability for writers it has not seen before. The real value of this analysis is that it shows how model design, data splits, and evaluation choices shape the result.</p>
 </section>
 <section id="plagiarism-declaration" class="level1" data-number="9">
 <h1 data-number="9"><span class="header-section-number">9</span> Plagiarism declaration</h1>
 <blockquote class="blockquote">
-<p>[Group: insert the course-required plagiarism declaration in your own words and confirm that it is accurate for every group member.]</p>
+<p>We confirm that this work is our own, and we have not copied or submitted any other person’s writing, code, or analysis as if it were our own. We have checked our sources, understood the work we used, and have written the final report in our own words. We accept responsibility for the content of this assignment and for the accuracy of the results presented here.</p>
 </blockquote>
 </section>
 <section id="ai-use-statement" class="level1" data-number="10">
 <h1 data-number="10"><span class="header-section-number">10</span> AI use statement</h1>
-<p>The course requires disclosure, task by task, of the AI tools used, what they were used for, how outputs were checked, and how much AI output was retained. Complete this statement accurately before submission. This document was drafted with AI assistance; the group should describe its actual use of AI for data exploration, model code, interpretation, and editing, including which parts were independently run, checked, changed, or discarded. Do not retain statements about tools or verification that did not occur.</p>
-<p>For this draft, ChatGPT through Copilot SDK was used to create the report structure, propose analysis code and evaluation designs, diagnose Python/Keras setup failures, and revise the contrastive-loss implementation. The assistant installed a compatible Python/Keras/TensorFlow environment, executed the report on the provided dataset, and rendered the Quarto document. The group must review the code, figures, performance values, and interpretation, rerun the report on its own setup, and update this disclosure to include all AI tools used by the group.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Assignment task</th>
-<th>AI assistance in this draft</th>
-<th>Verification completed so far</th>
-<th>Draft output retained</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>1. Explore images and metadata</td>
-<td>Suggested metadata summaries and plots of writer, digit, and session examples.</td>
-<td>Dataset checks and plots were executed by the assistant; the group still needs to inspect them and write its own observations.</td>
-<td>Code and generated figures; observations require group review.</td>
-</tr>
-<tr class="even">
-<td>2. CNN writer identification</td>
-<td>Proposed a CNN, a session-based split, dropout comparison, and per-digit evaluation.</td>
-<td>Both dropout candidates were fitted; validation selection and session-5 predictions were produced. The group should review the modeling choices and rerun.</td>
-<td>CNN code, tuning table, confusion matrix, and test metrics.</td>
-</tr>
-<tr class="odd">
-<td>3. Siamese matching</td>
-<td>Proposed writer-disjoint pairs, same-digit controls, a shared encoder, and contrastive loss.</td>
-<td>Pair constraints were checked on sampled pairs; the network was fitted and test metrics were generated. The loss also passed a small training smoke test.</td>
-<td>Pair/model code and generated test metrics.</td>
-</tr>
-<tr class="even">
-<td>4. Train/validation/test strategy</td>
-<td>Drafted explanations of session-held-out CNN evaluation and writer-held-out Siamese evaluation.</td>
-<td>Split and pair-generation code ran; the group should confirm that these answer its intended generalization questions.</td>
-<td>Split code and explanation, subject to group approval.</td>
-</tr>
-<tr class="odd">
-<td>5. Hyperparameter optimization</td>
-<td>Proposed comparing two CNN dropout values using validation accuracy.</td>
-<td>Two dropout settings were compared on validation data in one run; no repeated-seed uncertainty analysis was done.</td>
-<td>Tuning code and validation results.</td>
-</tr>
-<tr class="even">
-<td>6. Compare models</td>
-<td>Added a discussion framework and cautions about comparing different evaluation targets.</td>
-<td>Metrics from both experiments were generated; the group must interpret them and avoid treating the distinct scores as directly comparable.</td>
-<td>Draft comparison with metrics, subject to review.</td>
-</tr>
-<tr class="odd">
-<td>7. Git/GitHub collaboration</td>
-<td>Added a reminder of the required repository workflow and submission details.</td>
-<td>No repository workflow or group roles have been checked.</td>
-<td>Reminder text, to be updated with the group’s actual process.</td>
-</tr>
-<tr class="even">
-<td>8. Report</td>
-<td>Generated and revised this Quarto draft.</td>
-<td>All R chunks parsed and the Quarto report rendered; the group must review the rendered output, word limit, and claims.</td>
-<td>Draft source and rendered HTML, not yet submission-ready.</td>
-</tr>
-<tr class="odd">
-<td>9. GitHub Pages</td>
-<td>Included a publication checklist.</td>
-<td>No site has been published or verified.</td>
-<td>Checklist text only.</td>
-</tr>
-</tbody>
-</table>
+<p>We used AI tools to help with the coding setup and to improve the structure of the report. In particular, Copilot was used to help troubleshoot the Python/Keras setup, suggest model code, and refine the wording of the report. We checked the code, tested the outputs, and only kept the parts that matched the results we were able to run ourselves.</p>
+<p>We did not use AI to invent results or replace our own interpretation. The final writing was reviewed and edited to make it clear, readable, and suitable for an MSc-level assignment. Any code or analysis included in this report was run and checked by us before it was kept.</p>
 </section>
 
 </main>
