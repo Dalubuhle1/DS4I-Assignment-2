@@ -3,17 +3,6 @@ title: "Writer identification in simulated handwriting"
 subtitle: "STA5073Z Data Science for Industry — Assignment 2"
 author: "[Add group members]"
 date: today
-format:
-  html:
-    toc: true
-    number-sections: true
-    code-fold: true
-    theme: cosmo
-execute:
-  echo: false
-  warning: false
-  message: false
-  freeze: false
 ---
 
 ## One-time R setup {.unnumbered}
