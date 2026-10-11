@@ -1,0 +1,502 @@
+---
+title: "Writer identification in simulated handwriting"
+subtitle: "STA5073Z Data Science for Industry — Assignment 2"
+author: "[Add group members]"
+date: today
+---
+
+## One-time R setup {.unnumbered}
+
+Install the R interfaces once in the R console (not in a Quarto chunk), then restart R:
+
+```r
+install.packages(c("keras3", "tensorflow"))
+```
+
+Following the supplied `installing_keras.R` guide, restart R and check the TensorFlow backend:
+
+```r
+library(keras3)
+use_backend("tensorflow")
+tensorflow::tf_config()
+tf <- tensorflow::tf
+tf$constant("hello")
+```
+
+Recent versions of `keras3` and `reticulate` manage a compatible Python environment. The first call into Keras may download Python and the required packages; this report does not pin or select a separate project Python environment.
+
+```{r}
+library(tidyverse)
+library(keras3)
+
+use_backend("tensorflow")
+set.seed(5073)
+set_random_seed(5073)
+
+data <- readRDS("handwriting.rds")
+images <- data$images
+metadata <- as_tibble(data$metadata) %>%
+  mutate(.image_index = row_number())
+
+stopifnot(
+  identical(dim(images), c(25000L, 28L, 28L, 1L)),
+  nrow(metadata) == dim(images)[1],
+  all(c("image_id", "person_id", "digit", "session", "replicate") %in% names(metadata))
+)
+
+# Keras expects image intensities on a [0, 1] scale.
+x <- images / 255
+rm(images)
+data$images <- NULL
+```
+
+# Introduction
+
+This assignment looks at whether a model can tell which person wrote a digit from a small image. We worked with a simulated dataset of 25,000 grayscale images, each measuring 28 × 28 pixels. There are 20 fictional writers, and each writer produced digits 0 to 4 across five sessions.
+
+We tested two different approaches. First, we trained a convolutional neural network (CNN) to classify each image into one of 20 writer IDs. Second, we trained a Siamese network to compare two images and decide whether they came from the same writer. These are not the same task, so we should not treat their scores as directly comparable.
+
+It is important to be realistic here: this is a simulated dataset, not real handwriting. That means the results tell us how these models behave on this dataset, not how they would perform on actual handwriting in everyday settings.
+
+# 1. Data exploration
+
+## Structure and balance
+
+Before fitting any model, it helps to check the basic structure of the data. We confirmed the image dimensions, the range of pixel values, and the number of examples for each writer, digit, and session. The design is meant to be balanced, so any unusual counts would be a warning sign before training begins.
+
+```{r}
+dim(x)
+range(x)
+metadata %>% summarise(
+  n_images = n(),
+  n_writers = n_distinct(person_id),
+  n_digits = n_distinct(digit),
+  n_sessions = n_distinct(session),
+  min_replicates = min(replicate),
+  max_replicates = max(replicate)
+)
+
+metadata %>%
+  count(person_id, digit, session) %>%
+  summarise(min_per_cell = min(n), max_per_cell = max(n))
+```
+
+## Examples across writers and digits
+
+The figures below show a few sample images so we can look for patterns by eye. The first plot gives one example from five writers for each digit, all from session 1. The second plot keeps the writer and digit fixed and shows how that same writer’s style changes across sessions. This is useful because handwriting is not always perfectly identical even when the same person writes the same digit.
+
+```{r}
+set.seed(5073)
+shown_writers <- sample(sort(unique(metadata$person_id)), 5)
+writer_digit_examples <- metadata %>%
+  filter(person_id %in% shown_writers, session == 1) %>%
+  group_by(person_id, digit) %>%
+  slice_sample(n = 1) %>%
+  ungroup()
+
+pixels_for <- function(image_index) {
+  img <- x[image_index, , , 1]
+  expand_grid(row = 1:28, col = 1:28) %>%
+    mutate(intensity = as.vector(t(img)))
+}
+
+plot_examples <- function(example_rows, facet_formula) {
+  plot_data <- map2_dfr(
+    example_rows$.image_index,
+    seq_len(nrow(example_rows)),
+    ~ pixels_for(.x) %>% mutate(panel = .y)
+  ) %>%
+    left_join(
+      example_rows %>% mutate(panel = row_number()),
+      by = "panel"
+    )
+
+  ggplot(plot_data, aes(col, row, fill = intensity)) +
+    geom_raster() +
+    scale_y_reverse() +
+    scale_fill_gradient(low = "white", high = "black", guide = "none") +
+    facet_grid(facet_formula, labeller = label_both) +
+    coord_equal() +
+    theme_void()
+}
+
+plot_examples(writer_digit_examples, person_id ~ digit)
+```
+
+```{r}
+set.seed(5073)
+chosen_writer <- sample(sort(unique(metadata$person_id)), 1)
+chosen_digit <- sample(sort(unique(metadata$digit)), 1)
+session_examples <- metadata %>%
+  filter(person_id == chosen_writer, digit == chosen_digit) %>%
+  group_by(session) %>%
+  slice_sample(n = 1) %>%
+  ungroup()
+
+plot_examples(session_examples, session ~ .)
+```
+
+When we look at the rendered images, we should pay attention to things like stroke shape, slant, thickness, spacing, and how consistent the writing is across sessions. Some digits may look cleaner or more distinctive than others, while others may appear more variable. We also need to remember that these are simulated images, so they are cleaner and more structured than real handwriting and do not fully represent natural variation in pen pressure, scan quality, or writing habits.
+
+# 2. CNN writer identification
+
+## Split and model
+
+The CNN was trained to predict one of 20 writer IDs. We used sessions 1–3 for training, session 4 for choosing the dropout value, and session 5 for the final test result. This is a standard way to test whether the model can still recognise the same writers when the writing comes from a later session.
+
+This split matters because all 20 writers are present in every set. That is necessary for a closed-set classification problem: the model cannot correctly identify a writer it never saw during training. By holding out an entire session, we avoid testing on nearly identical samples from the same recording session and instead check whether the model generalises to later writing samples.
+
+We compared two dropout values as a small, planned hyperparameter check. The model selection was done using the validation session only, and session 5 remained untouched until the final evaluation.
+
+```{r}
+train_idx <- which(metadata$session %in% 1:3)
+valid_idx <- which(metadata$session == 4)
+test_idx  <- which(metadata$session == 5)
+
+y_writer <- as.integer(metadata$person_id) - 1L
+
+build_cnn <- function(dropout_rate) {
+  keras_model_sequential(input_shape = c(28L, 28L, 1L)) %>%
+    layer_conv_2d(filters = 32L, kernel_size = 3L, padding = "same",
+                  activation = "relu") %>%
+    layer_max_pooling_2d(pool_size = 2L) %>%
+    layer_conv_2d(filters = 64L, kernel_size = 3L, padding = "same",
+                  activation = "relu") %>%
+    layer_max_pooling_2d(pool_size = 2L) %>%
+    layer_flatten() %>%
+    layer_dense(units = 64L, activation = "relu") %>%
+    layer_dropout(rate = dropout_rate) %>%
+    layer_dense(units = 20L, activation = "softmax") %>%
+    compile(
+      optimizer = optimizer_adam(learning_rate = 0.001),
+      loss = "sparse_categorical_crossentropy",
+      metrics = "accuracy"
+    )
+}
+
+dropout_grid <- c(0.2, 0.4)
+cnn_candidates <- map(dropout_grid, function(rate) {
+  model <- build_cnn(rate)
+  history <- model %>% fit(
+    x[train_idx, , , , drop = FALSE],
+    y_writer[train_idx],
+    validation_data = list(
+      x[valid_idx, , , , drop = FALSE],
+      y_writer[valid_idx]
+    ),
+    epochs = 15,
+    batch_size = 64,
+    callbacks = list(callback_early_stopping(
+      monitor = "val_accuracy", mode = "max",
+      patience = 3, restore_best_weights = TRUE
+    )),
+    verbose = 0
+  )
+  list(model = model, history = history)
+})
+
+cnn_tuning <- tibble(
+  dropout = dropout_grid,
+  best_validation_accuracy = map_dbl(
+    cnn_candidates,
+    ~ max(.x$history$metrics$val_accuracy, na.rm = TRUE)
+  )
+)
+knitr::kable(cnn_tuning, digits = 3)
+
+best_cnn_index <- which.max(cnn_tuning$best_validation_accuracy)
+cnn_model <- cnn_candidates[[best_cnn_index]]$model
+cnn_valid_prob <- predict(
+  cnn_model, x[valid_idx, , , , drop = FALSE], verbose = 0
+)
+cnn_valid_pred <- max.col(cnn_valid_prob) - 1L
+cnn_valid_accuracy <- mean(cnn_valid_pred == y_writer[valid_idx])
+
+cnn_prob <- predict(
+  cnn_model, x[test_idx, , , , drop = FALSE], verbose = 0
+)
+cnn_pred <- max.col(cnn_prob) - 1L
+cnn_truth <- y_writer[test_idx]
+cnn_accuracy <- mean(cnn_pred == cnn_truth)
+cnn_session_difference <- cnn_accuracy - cnn_valid_accuracy
+
+cnn_session_results <- tibble(
+  session = c(4L, 5L),
+  role = c("Validation (used for model selection)", "Held-out test"),
+  accuracy = c(cnn_valid_accuracy, cnn_accuracy),
+  n = c(length(valid_idx), length(test_idx))
+)
+knitr::kable(cnn_session_results, digits = 3)
+
+cnn_by_digit <- tibble(
+  digit = metadata$digit[test_idx],
+  truth = cnn_truth,
+  prediction = cnn_pred
+) %>%
+  group_by(digit) %>%
+  summarise(
+    accuracy = mean(truth == prediction),
+    n = n(),
+    .groups = "drop"
+  )
+knitr::kable(cnn_by_digit, digits = 3)
+```
+
+## Results and interpretation
+
+The CNN achieved an overall test accuracy of `r sprintf("%.3f", cnn_accuracy)` on session 5. For 20 equally balanced classes, random guessing would give a chance accuracy of 0.05. In simple terms, this means the model performed well above chance, but the result should still be read carefully.
+
+The digit-specific results were not identical across digits. In this run, digit `r cnn_by_digit$digit[which.max(cnn_by_digit$accuracy)]` performed best (`r sprintf("%.3f", max(cnn_by_digit$accuracy))`), while digit `r cnn_by_digit$digit[which.min(cnn_by_digit$accuracy)]` was the weakest (`r sprintf("%.3f", min(cnn_by_digit$accuracy))`). These are descriptive results from one split and one training run, so they should be considered alongside the sample images rather than treated as a universal statement that one digit is always easier to classify.
+
+The table above compares the CNN's accuracy on session 4 and session 5. The held-out test minus validation difference is `r sprintf("%.3f", cnn_session_difference)`. The session-4 result is not an independent estimate because it was used to select the dropout setting; session 5 is the held-out test result. A difference between these scores is consistent with a session shift, but should be interpreted cautiously because it comes from one split and one training run.
+
+This is a closed-set result: the test writers were already known to the model, but their session-5 samples were new to it. That means it does not tell us how the model would do on a completely new person. The confusion matrix below is also useful because raw accuracy can hide patterns such as certain writers being confused with one another.
+
+```{r}
+cnn_confusion <- table(
+  true = factor(cnn_truth, levels = 0:19),
+  predicted = factor(cnn_pred, levels = 0:19)
+)
+knitr::kable(as.data.frame.matrix(cnn_confusion))
+```
+
+# 3. Siamese same-writer matching
+
+## Pair construction and evaluation split
+
+For the Siamese model, we used writer-disjoint groups: 12 writers for training, four for validation, and four for testing. That means no writer appearing in the validation or test pairs was used in the training pairs. This is a different question from the CNN: here we are asking whether the model can match handwriting from writers it has never seen before.
+
+Each pair uses the same digit on both sides, which helps control for digit identity. Positive pairs contain two different images from the same writer and the same digit, while negative pairs contain images from two different writers but the same digit. The training, validation, and test sets were balanced between positive and negative labels. Because the pair selection sampled across the available sessions, the test set also includes some session variation.
+
+```{r}
+set.seed(5073)
+writer_ids <- sample(sort(unique(metadata$person_id)))
+train_writers <- writer_ids[1:12]
+valid_writers <- writer_ids[13:16]
+test_writers  <- writer_ids[17:20]
+
+make_pairs <- function(writers, n_pairs) {
+  eligible <- which(metadata$person_id %in% writers)
+  available_writers <- sort(unique(metadata$person_id[eligible]))
+  labels <- rep(c(1L, 0L), length.out = n_pairs)
+  left <- integer(n_pairs)
+  right <- integer(n_pairs)
+
+  for (i in seq_len(n_pairs)) {
+    digit <- sample(0:4, 1)
+    if (labels[i] == 1L) {
+      writer <- sample(available_writers, 1)
+      candidates <- eligible[
+        metadata$person_id[eligible] == writer &
+          metadata$digit[eligible] == digit
+      ]
+      chosen <- sample(candidates, 2)
+    } else {
+      writers_for_pair <- sample(available_writers, 2)
+      first <- eligible[
+        metadata$person_id[eligible] == writers_for_pair[1] &
+          metadata$digit[eligible] == digit
+      ]
+      second <- eligible[
+        metadata$person_id[eligible] == writers_for_pair[2] &
+          metadata$digit[eligible] == digit
+      ]
+      chosen <- c(sample(first, 1), sample(second, 1))
+    }
+    left[i] <- chosen[1]
+    right[i] <- chosen[2]
+  }
+
+  list(left = left, right = right, label = as.numeric(labels))
+}
+
+train_pairs <- make_pairs(train_writers, 12000)
+valid_pairs <- make_pairs(valid_writers, 2000)
+test_pairs  <- make_pairs(test_writers, 2000)
+
+pair_inputs <- function(pairs) {
+  list(
+    x[pairs$left, , , , drop = FALSE],
+    x[pairs$right, , , , drop = FALSE]
+  )
+}
+```
+
+## Network and contrastive loss
+
+Both sides of the network share the same encoder. The model is trained with contrastive loss, which encourages same-writer pairs to sit close together in the embedding space and pushes different-writer pairs further apart. We used a margin of 1, meaning that pairs that are too close when they should be different are penalised. The final distance between two images is computed from the Euclidean distance between their learned embeddings.
+
+```{r}
+build_siamese <- function(margin = 1) {
+  encoder <- keras_model_sequential(input_shape = c(28L, 28L, 1L)) %>%
+    layer_conv_2d(32L, 3L, padding = "same", activation = "relu") %>%
+    layer_max_pooling_2d(2L) %>%
+    layer_conv_2d(64L, 3L, padding = "same", activation = "relu") %>%
+    layer_max_pooling_2d(2L) %>%
+    layer_flatten() %>%
+    layer_dense(64L, activation = "relu") %>%
+    layer_dense(16L)
+
+  input_a <- layer_input(shape = c(28L, 28L, 1L))
+  input_b <- layer_input(shape = c(28L, 28L, 1L))
+  embedding_a <- encoder(input_a)
+  embedding_b <- encoder(input_b)
+  difference <- layer_subtract(list(embedding_a, embedding_b))
+
+  contrastive_loss <- function(y_true, y_pred) {
+    y_true <- op_reshape(y_true, newshape = c(-1L, 1L))
+    squared_distance <- op_sum(
+      op_square(y_pred), axis = -1L, keepdims = TRUE
+    )
+    distance <- op_sqrt(squared_distance + 1e-7)
+    y_true * squared_distance +
+      (1 - y_true) * op_square(op_maximum(margin - distance, 0))
+  }
+
+  keras_model(
+    inputs = list(input_a, input_b),
+    outputs = difference
+  ) %>%
+    compile(
+      optimizer = optimizer_adam(learning_rate = 0.001),
+      loss = contrastive_loss
+    )
+}
+
+siamese_model <- build_siamese()
+siamese_history <- siamese_model %>% fit(
+  pair_inputs(train_pairs),
+  train_pairs$label,
+  validation_data = list(
+    pair_inputs(valid_pairs),
+    valid_pairs$label
+  ),
+  epochs = 15,
+  batch_size = 128,
+  callbacks = list(callback_early_stopping(
+    monitor = "val_loss", patience = 3, restore_best_weights = TRUE
+  )),
+  verbose = 0
+)
+
+pair_distances <- function(model, pairs) {
+  differences <- predict(model, pair_inputs(pairs), verbose = 0)
+  sqrt(rowSums(differences^2) + 1e-7)
+}
+
+valid_distance <- pair_distances(siamese_model, valid_pairs)
+test_distance <- pair_distances(siamese_model, test_pairs)
+
+balanced_accuracy_at <- function(distance, label, threshold) {
+  predicted_match <- distance <= threshold
+  sensitivity <- mean(predicted_match[label == 1])
+  specificity <- mean(!predicted_match[label == 0])
+  (sensitivity + specificity) / 2
+}
+
+threshold_grid <- as.numeric(quantile(
+  valid_distance, probs = seq(0, 1, length.out = 101)
+))
+threshold_scores <- map_dbl(
+  threshold_grid,
+  ~ balanced_accuracy_at(valid_distance, valid_pairs$label, .x)
+)
+match_threshold <- threshold_grid[which.max(threshold_scores)]
+
+test_match <- test_distance <= match_threshold
+test_sensitivity <- mean(test_match[test_pairs$label == 1])
+test_specificity <- mean(!test_match[test_pairs$label == 0])
+siamese_accuracy <- mean(test_match == (test_pairs$label == 1))
+siamese_balanced_accuracy <- (test_sensitivity + test_specificity) / 2
+
+test_session_relation <- ifelse(
+  metadata$session[test_pairs$left] == metadata$session[test_pairs$right],
+  "Same session",
+  "Different sessions"
+)
+siamese_session_results <- tibble(
+  session_relation = test_session_relation,
+  truth = test_pairs$label,
+  predicted = as.integer(test_match)
+) %>%
+  group_by(session_relation) %>%
+  summarise(
+    n_pairs = n(),
+    accuracy = mean(predicted == truth),
+    sensitivity = mean(predicted[truth == 1] == 1),
+    specificity = mean(predicted[truth == 0] == 0),
+    balanced_accuracy = (sensitivity + specificity) / 2,
+    .groups = "drop"
+  )
+same_session_balanced_accuracy <- siamese_session_results$balanced_accuracy[
+  siamese_session_results$session_relation == "Same session"
+]
+cross_session_balanced_accuracy <- siamese_session_results$balanced_accuracy[
+  siamese_session_results$session_relation == "Different sessions"
+]
+siamese_session_difference <- cross_session_balanced_accuracy -
+  same_session_balanced_accuracy
+
+siamese_results <- tibble(
+  metric = c("Accuracy", "Balanced accuracy", "Sensitivity (same writer)",
+             "Specificity (different writer)", "Validation-selected distance threshold"),
+  value = c(siamese_accuracy, siamese_balanced_accuracy,
+            test_sensitivity, test_specificity, match_threshold)
+)
+knitr::kable(siamese_results, digits = 3)
+knitr::kable(siamese_session_results, digits = 3)
+```
+
+## Results and interpretation
+
+On the test writers that were held out from training, the Siamese model reached a balanced accuracy of `r sprintf("%.3f", siamese_balanced_accuracy)` using a distance threshold selected only from the validation writers. In other words, it was able to tell when two images were likely written by the same person, while also rejecting pairs from different writers.
+
+Sensitivity here means the proportion of same-writer pairs that were correctly accepted, while specificity means the proportion of different-writer pairs that were correctly rejected. Balanced accuracy gives equal importance to both, which is useful here because we do not want a model that is very good at one class but poor at the other.
+
+The session-stratified table compares test pairs whose images come from the same session with pairs spanning different sessions. Cross-session balanced accuracy was `r sprintf("%.3f", cross_session_balanced_accuracy)` versus `r sprintf("%.3f", same_session_balanced_accuracy)` for within-session pairs, a difference of `r sprintf("%.3f", siamese_session_difference)` (cross-session minus same-session). The threshold remains fixed at the value selected on validation writers. This gives a direct, though still sample-dependent, check of whether session changes coincide with a change in matching performance.
+
+This experiment is closer to a verification task on unseen writers than the CNN task. However, it is still based on only four test writers and a sampled set of pairs, so the result should be read as a useful indicator rather than a universal measure of real-world performance.
+
+# 4. Hyperparameter sensitivity
+
+For the CNN, we compared two dropout values and recorded their validation accuracy on session 4. The model with the higher validation score was selected, and the session-5 test set was only used after that decision. This gives a simple sensitivity check, but it is limited because we only tested two settings and used one random seed.
+
+For the Siamese model, we kept the architecture and contrastive margin fixed so the comparison stayed manageable. A more detailed study could explore different margins or embedding sizes, but any such tuning would need to be done only on the validation writers. We should avoid adjusting the model based on the test writers.
+
+# 5. Comparison and discussion
+
+The two models answer slightly different questions. The CNN asks: “Which known writer produced this image?” The Siamese model asks: “Do these two images likely come from the same writer?” Because of this, the CNN score (`r sprintf("%.3f", cnn_accuracy)`) and the Siamese balanced accuracy (`r sprintf("%.3f", siamese_balanced_accuracy)`) are not directly interchangeable.
+
+Looking at the digit-specific CNN results helps us see which digits were easier to classify in this experiment. The pattern should be explained using the example images, because each digit has its own shape and some are naturally more distinctive than others. The Siamese task also controls for digit identity by comparing images of the same digit only, so it is not measuring general digit difficulty in the same way.
+
+The CNN was trained on sessions 1–3 and evaluated on sessions 4 and 5; its session-4 score is validation-only, while session 5 is the final test. The Siamese table separately compares same-session and cross-session test pairs from writers held out of training. Read together, these results show whether later-session CNN accuracy and cross-session matching differ in this run. They do not establish that session changes alone caused a difference: there is one split, one training run, and only four test writers for the Siamese model.
+
+## Limitations
+
+- The images are simulated; performance may not transfer to real handwriting.
+- There are only 20 writers. The Siamese writer-disjoint test set contains four writers, so its result can be sensitive to which writers are held out.
+- Pair observations share images and writers, so pairs are not independent. Pair-level accuracy does not imply the same precision as an evaluation over a large independent population.
+- Only two CNN dropout settings were tested, with one random seed. Report the resulting validation values and treat small differences cautiously.
+- The CNN and Siamese evaluations target different forms of generalization, as described above.
+
+# 6. Reproducibility and collaboration
+
+The project repository should contain this Quarto source, the code and data-loading instructions needed to reproduce the analysis, and the rendered site source. Keep the supplied dataset in the repository only if course rules permit it. Group members should use branches and pull requests, with each member's contribution recorded in the submission text file.
+
+The code sets seeds for R and Keras/TensorFlow. Some TensorFlow operations may still be nondeterministic. Record the R, Keras, and TensorFlow versions used for the final run and retain the rendered report and relevant training outputs.
+
+Before submission, add the group members and roles to the required text file, include the GitHub Pages URL and source repository URL, and confirm the Quarto site is published from that repository. The group presentation is a separate deliverable (maximum 20 minutes); all members must attend and present.
+
+# Conclusion
+
+This assignment compared two different ways of identifying writers from simulated handwriting images. The CNN was used to classify a digit image into one of 20 known writers, while the Siamese model was used to decide whether two images were likely written by the same person. The results show that both approaches can work on this dataset, but the performance depends heavily on the evaluation setup and the nature of the task.
+
+The main lesson is that these models are not directly comparable because they are solving different problems. The CNN tests recognition of known writers across later sessions, while the Siamese model tests matching ability for writers it has not seen before. The real value of this analysis is that it shows how model design, data splits, and evaluation choices shape the result.
+
+# Plagiarism declaration
+
+> We confirm that this work is our own, and we have not copied or submitted any other person’s writing, code, or analysis as if it were our own. We have checked our sources, understood the work we used, and have written the final report in our own words. We accept responsibility for the content of this assignment and for the accuracy of the results presented here.
+
+# AI use statement
+
+We used Copilot for technical support. For Task 1, it checked the report against the brief but did not interpret the image examples; those observations must come from our own review. For Task 2, it reviewed the CNN validation and test code. For Task 3, it helped add a same-session versus cross-session breakdown to the Siamese test evaluation. For Task 4, it reviewed the split strategy and possible leakage. For Task 5, it checked that CNN early stopping matched the validation metric used for dropout selection. For Task 6, it helped identify and address the need to report session-related performance. We checked these changes against the assignment brief and supplied Keras/neural-network notes. No metric values were generated by AI; the report calculates them from the data when rendered. The AI-assisted code and short explanatory additions were retained, while the group remains responsible for running the analysis, checking and interpreting its outputs, and editing the final report in its own words.

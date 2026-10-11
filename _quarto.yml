@@ -1,0 +1,28 @@
+project:
+  type: website
+  output-dir: docs
+  render:
+    - index.qmd
+
+website:
+  title: "DS4I Assignment 2"
+  description: "Image classification with neural networks"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Report
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+    embed-resources: false
+
+execute:
+  echo: false
+  warning: false
+  message: false
+  freeze: auto
