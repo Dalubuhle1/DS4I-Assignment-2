@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="[Add group members]">
-<meta name="dcterms.date" content="2026-10-07">
+<meta name="dcterms.date" content="2026-10-11">
 
 <title>Writer identification in simulated handwriting</title>
 <style>
@@ -89,7 +89,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#one-time-python-setup" id="toc-one-time-python-setup" class="nav-link active" data-scroll-target="#one-time-python-setup">One-time Python setup</a></li>
+  <li><a href="#one-time-r-setup" id="toc-one-time-r-setup" class="nav-link active" data-scroll-target="#one-time-r-setup">One-time R setup</a></li>
   <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
   <li><a href="#data-exploration" id="toc-data-exploration" class="nav-link" data-scroll-target="#data-exploration"><span class="header-section-number">2</span> 1. Data exploration</a>
   <ul class="collapse">
@@ -141,7 +141,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 7, 2026</p>
+      <p class="date">October 11, 2026</p>
     </div>
   </div>
   
@@ -153,17 +153,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="one-time-python-setup" class="level2 unnumbered">
-<h2 class="unnumbered anchored" data-anchor-id="one-time-python-setup">One-time Python setup</h2>
-<p>The R package <code>keras3</code> calls Python Keras. This project also contains a <code>.venv</code> directory, so the setup below explicitly selects the separate <code>r-keras</code> environment. Run this once in the R console (not in a Quarto chunk), then restart R before rendering:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>reticulate<span class="sc">::</span><span class="fu">install_python</span>(<span class="st">"3.11.9"</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>keras3<span class="sc">::</span><span class="fu">install_keras</span>(</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">envname =</span> <span class="st">"r-keras"</span>,</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">backend =</span> <span class="st">"tensorflow"</span>,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">python_version =</span> <span class="st">"&gt;=3.9,&lt;=3.11"</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">extra_packages =</span> <span class="fu">c</span>(<span class="st">"numpy&lt;2"</span>, <span class="st">"ml-dtypes&lt;0.6"</span>)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Python 3.11.9 and the Keras/TensorFlow dependencies have been installed in the current environment. The NumPy constraints match the versions required by the R <code>keras3</code> package. In a fresh R session the code below selects <code>r-keras</code>, overriding the project’s <code>.venv</code>.</p>
+<section id="one-time-r-setup" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="one-time-r-setup">One-time R setup</h2>
+<p>Install the R interfaces once in the R console (not in a Quarto chunk), then restart R:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">"keras3"</span>, <span class="st">"tensorflow"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Following the supplied <code>installing_keras.R</code> guide, restart R and check the TensorFlow backend:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(keras3)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">use_backend</span>(<span class="st">"tensorflow"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>tensorflow<span class="sc">::</span><span class="fu">tf_config</span>()</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>tf <span class="ot">&lt;-</span> tensorflow<span class="sc">::</span>tf</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>tf<span class="sc">$</span><span class="fu">constant</span>(<span class="st">"hello"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Recent versions of <code>keras3</code> and <code>reticulate</code> manage a compatible Python environment. The first call into Keras may download Python and the required packages; this report does not pin or select a separate project Python environment.</p>
 </section>
 <section id="introduction" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
@@ -253,6 +253,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
+<th style="text-align: right;">session</th>
+<th style="text-align: left;">role</th>
+<th style="text-align: right;">accuracy</th>
+<th style="text-align: right;">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">Validation (used for model selection)</td>
+<td style="text-align: right;">0.594</td>
+<td style="text-align: right;">5000</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">Held-out test</td>
+<td style="text-align: right;">0.603</td>
+<td style="text-align: right;">5000</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
 <th style="text-align: right;">digit</th>
 <th style="text-align: right;">accuracy</th>
 <th style="text-align: right;">n</th>
@@ -293,6 +319,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="3.2" class="anchored" data-anchor-id="results-and-interpretation"><span class="header-section-number">3.2</span> Results and interpretation</h2>
 <p>The CNN achieved an overall test accuracy of 0.603 on session 5. For 20 equally balanced classes, random guessing would give a chance accuracy of 0.05. In simple terms, this means the model performed well above chance, but the result should still be read carefully.</p>
 <p>The digit-specific results were not identical across digits. In this run, digit 3 performed best (0.683), while digit 1 was the weakest (0.498). These are descriptive results from one split and one training run, so they should be considered alongside the sample images rather than treated as a universal statement that one digit is always easier to classify.</p>
+<p>The table above compares the CNN’s accuracy on session 4 and session 5. The held-out test minus validation difference is 0.009. The session-4 result is not an independent estimate because it was used to select the dropout setting; session 5 is the held-out test result. A difference between these scores is consistent with a session shift, but should be interpreted cautiously because it comes from one split and one training run.</p>
 <p>This is a closed-set result: the test writers were already known to the model, but their session-5 samples were new to it. That means it does not tell us how the model would do on a completely new person. The confusion matrix below is also useful because raw accuracy can hide patterns such as certain writers being confused with one another.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -855,12 +882,53 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 10%">
+<col style="width: 11%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">session_relation</th>
+<th style="text-align: right;">n_pairs</th>
+<th style="text-align: right;">accuracy</th>
+<th style="text-align: right;">sensitivity</th>
+<th style="text-align: right;">specificity</th>
+<th style="text-align: right;">balanced_accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Different sessions</td>
+<td style="text-align: right;">1631</td>
+<td style="text-align: right;">0.833</td>
+<td style="text-align: right;">0.908</td>
+<td style="text-align: right;">0.759</td>
+<td style="text-align: right;">0.833</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Same session</td>
+<td style="text-align: right;">369</td>
+<td style="text-align: right;">0.875</td>
+<td style="text-align: right;">1.000</td>
+<td style="text-align: right;">0.747</td>
+<td style="text-align: right;">0.874</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 </section>
 <section id="results-and-interpretation-1" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="results-and-interpretation-1"><span class="header-section-number">4.3</span> Results and interpretation</h2>
 <p>On the test writers that were held out from training, the Siamese model reached a balanced accuracy of 0.841 using a distance threshold selected only from the validation writers. In other words, it was able to tell when two images were likely written by the same person, while also rejecting pairs from different writers.</p>
 <p>Sensitivity here means the proportion of same-writer pairs that were correctly accepted, while specificity means the proportion of different-writer pairs that were correctly rejected. Balanced accuracy gives equal importance to both, which is useful here because we do not want a model that is very good at one class but poor at the other.</p>
+<p>The session-stratified table compares test pairs whose images come from the same session with pairs spanning different sessions. Cross-session balanced accuracy was 0.833 versus 0.874 for within-session pairs, a difference of -0.040 (cross-session minus same-session). The threshold remains fixed at the value selected on validation writers. This gives a direct, though still sample-dependent, check of whether session changes coincide with a change in matching performance.</p>
 <p>This experiment is closer to a verification task on unseen writers than the CNN task. However, it is still based on only four test writers and a sampled set of pairs, so the result should be read as a useful indicator rather than a universal measure of real-world performance.</p>
 </section>
 </section>
@@ -873,7 +941,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1 data-number="6"><span class="header-section-number">6</span> 5. Comparison and discussion</h1>
 <p>The two models answer slightly different questions. The CNN asks: “Which known writer produced this image?” The Siamese model asks: “Do these two images likely come from the same writer?” Because of this, the CNN score (0.603) and the Siamese balanced accuracy (0.841) are not directly interchangeable.</p>
 <p>Looking at the digit-specific CNN results helps us see which digits were easier to classify in this experiment. The pattern should be explained using the example images, because each digit has its own shape and some are naturally more distinctive than others. The Siamese task also controls for digit identity by comparing images of the same digit only, so it is not measuring general digit difficulty in the same way.</p>
-<p>The CNN split used sessions 1–3 for training, session 4 for validation, and session 5 for testing. The Siamese model, by contrast, sampled pairs across available sessions for withheld writers. Looking at the sample images, we should consider whether there are visible session effects, but we should be careful not to overstate this. This design was not built to give a separate numerical estimate of session effect, and a proper session analysis would need a more explicit within-session versus cross-session comparison.</p>
+<p>The CNN was trained on sessions 1–3 and evaluated on sessions 4 and 5; its session-4 score is validation-only, while session 5 is the final test. The Siamese table separately compares same-session and cross-session test pairs from writers held out of training. Read together, these results show whether later-session CNN accuracy and cross-session matching differ in this run. They do not establish that session changes alone caused a difference: there is one split, one training run, and only four test writers for the Siamese model.</p>
 <section id="limitations" class="level2" data-number="6.1">
 <h2 data-number="6.1" class="anchored" data-anchor-id="limitations"><span class="header-section-number">6.1</span> Limitations</h2>
 <ul>
@@ -904,8 +972,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="ai-use-statement" class="level1" data-number="10">
 <h1 data-number="10"><span class="header-section-number">10</span> AI use statement</h1>
-<p>We used AI tools to help with the coding setup and to improve the structure of the report. In particular, Copilot was used to help troubleshoot the Python/Keras setup, suggest model code, and refine the wording of the report. We checked the code, tested the outputs, and only kept the parts that matched the results we were able to run ourselves.</p>
-<p>We did not use AI to invent results or replace our own interpretation. The final writing was reviewed and edited to make it clear, readable, and suitable for an MSc-level assignment. Any code or analysis included in this report was run and checked by us before it was kept.</p>
+<p>We used Copilot for technical support. For Task 1, it checked the report against the brief but did not interpret the image examples; those observations must come from our own review. For Task 2, it reviewed the CNN validation and test code. For Task 3, it helped add a same-session versus cross-session breakdown to the Siamese test evaluation. For Task 4, it reviewed the split strategy and possible leakage. For Task 5, it checked that CNN early stopping matched the validation metric used for dropout selection. For Task 6, it helped identify and address the need to report session-related performance. We checked these changes against the assignment brief and supplied Keras/neural-network notes. No metric values were generated by AI; the report calculates them from the data when rendered. The AI-assisted code and short explanatory additions were retained, while the group remains responsible for running the analysis, checking and interpreting its outputs, and editing the final report in its own words.</p>
 </section>
 
 </main>

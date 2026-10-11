@@ -16,44 +16,31 @@ execute:
   freeze: false
 ---
 
-## One-time Python setup {.unnumbered}
+## One-time R setup {.unnumbered}
 
-The R package `keras3` calls Python Keras. This project also contains a `.venv` directory, so the setup below explicitly selects the separate `r-keras` environment. Run this once in the R console (not in a Quarto chunk), then restart R before rendering:
+Install the R interfaces once in the R console (not in a Quarto chunk), then restart R:
 
 ```r
-reticulate::install_python("3.11.9")
-keras3::install_keras(
-  envname = "r-keras",
-  backend = "tensorflow",
-  python_version = ">=3.9,<=3.11",
-  extra_packages = c("numpy<2", "ml-dtypes<0.6")
-)
+install.packages(c("keras3", "tensorflow"))
 ```
 
-Python 3.11.9 and the Keras/TensorFlow dependencies have been installed in the current environment. The NumPy constraints match the versions required by the R `keras3` package. In a fresh R session the code below selects `r-keras`, overriding the project's `.venv`.
+Following the supplied `installing_keras.R` guide, restart R and check the TensorFlow backend:
+
+```r
+library(keras3)
+use_backend("tensorflow")
+tensorflow::tf_config()
+tf <- tensorflow::tf
+tf$constant("hello")
+```
+
+Recent versions of `keras3` and `reticulate` manage a compatible Python environment. The first call into Keras may download Python and the required packages; this report does not pin or select a separate project Python environment.
 
 ```{r}
-# Override a project-local .venv so reticulate uses the Keras environment.
-keras_python <- reticulate::virtualenv_python("r-keras")
-if (!file.exists(keras_python)) {
-  stop(
-    "The 'r-keras' environment was not found. Run the one-time setup above ",
-    "in the R console, restart R, and render again."
-  )
-}
-Sys.setenv(RETICULATE_PYTHON = keras_python)
-
 library(tidyverse)
 library(keras3)
 
 use_backend("tensorflow")
-if (!reticulate::py_module_available("keras")) {
-  stop(
-    "Python module 'keras' is missing from the managed 'r-keras' environment. ",
-    "Re-run keras3::install_keras(envname = 'r-keras', backend = 'tensorflow', ",
-    "python_version = '>=3.9,<=3.11') in a fresh R session, then restart R."
-  )
-}
 set.seed(5073)
 set_random_seed(5073)
 
@@ -211,7 +198,8 @@ cnn_candidates <- map(dropout_grid, function(rate) {
     epochs = 15,
     batch_size = 64,
     callbacks = list(callback_early_stopping(
-      monitor = "val_loss", patience = 3, restore_best_weights = TRUE
+      monitor = "val_accuracy", mode = "max",
+      patience = 3, restore_best_weights = TRUE
     )),
     verbose = 0
   )
@@ -229,12 +217,27 @@ knitr::kable(cnn_tuning, digits = 3)
 
 best_cnn_index <- which.max(cnn_tuning$best_validation_accuracy)
 cnn_model <- cnn_candidates[[best_cnn_index]]$model
+cnn_valid_prob <- predict(
+  cnn_model, x[valid_idx, , , , drop = FALSE], verbose = 0
+)
+cnn_valid_pred <- max.col(cnn_valid_prob) - 1L
+cnn_valid_accuracy <- mean(cnn_valid_pred == y_writer[valid_idx])
+
 cnn_prob <- predict(
   cnn_model, x[test_idx, , , , drop = FALSE], verbose = 0
 )
 cnn_pred <- max.col(cnn_prob) - 1L
 cnn_truth <- y_writer[test_idx]
 cnn_accuracy <- mean(cnn_pred == cnn_truth)
+cnn_session_difference <- cnn_accuracy - cnn_valid_accuracy
+
+cnn_session_results <- tibble(
+  session = c(4L, 5L),
+  role = c("Validation (used for model selection)", "Held-out test"),
+  accuracy = c(cnn_valid_accuracy, cnn_accuracy),
+  n = c(length(valid_idx), length(test_idx))
+)
+knitr::kable(cnn_session_results, digits = 3)
 
 cnn_by_digit <- tibble(
   digit = metadata$digit[test_idx],
@@ -255,6 +258,8 @@ knitr::kable(cnn_by_digit, digits = 3)
 The CNN achieved an overall test accuracy of `r sprintf("%.3f", cnn_accuracy)` on session 5. For 20 equally balanced classes, random guessing would give a chance accuracy of 0.05. In simple terms, this means the model performed well above chance, but the result should still be read carefully.
 
 The digit-specific results were not identical across digits. In this run, digit `r cnn_by_digit$digit[which.max(cnn_by_digit$accuracy)]` performed best (`r sprintf("%.3f", max(cnn_by_digit$accuracy))`), while digit `r cnn_by_digit$digit[which.min(cnn_by_digit$accuracy)]` was the weakest (`r sprintf("%.3f", min(cnn_by_digit$accuracy))`). These are descriptive results from one split and one training run, so they should be considered alongside the sample images rather than treated as a universal statement that one digit is always easier to classify.
+
+The table above compares the CNN's accuracy on session 4 and session 5. The held-out test minus validation difference is `r sprintf("%.3f", cnn_session_difference)`. The session-4 result is not an independent estimate because it was used to select the dropout setting; session 5 is the held-out test result. A difference between these scores is consistent with a session shift, but should be interpreted cautiously because it comes from one split and one training run.
 
 This is a closed-set result: the test writers were already known to the model, but their session-5 samples were new to it. That means it does not tell us how the model would do on a completely new person. The confusion matrix below is also useful because raw accuracy can hide patterns such as certain writers being confused with one another.
 
@@ -415,6 +420,34 @@ test_specificity <- mean(!test_match[test_pairs$label == 0])
 siamese_accuracy <- mean(test_match == (test_pairs$label == 1))
 siamese_balanced_accuracy <- (test_sensitivity + test_specificity) / 2
 
+test_session_relation <- ifelse(
+  metadata$session[test_pairs$left] == metadata$session[test_pairs$right],
+  "Same session",
+  "Different sessions"
+)
+siamese_session_results <- tibble(
+  session_relation = test_session_relation,
+  truth = test_pairs$label,
+  predicted = as.integer(test_match)
+) %>%
+  group_by(session_relation) %>%
+  summarise(
+    n_pairs = n(),
+    accuracy = mean(predicted == truth),
+    sensitivity = mean(predicted[truth == 1] == 1),
+    specificity = mean(predicted[truth == 0] == 0),
+    balanced_accuracy = (sensitivity + specificity) / 2,
+    .groups = "drop"
+  )
+same_session_balanced_accuracy <- siamese_session_results$balanced_accuracy[
+  siamese_session_results$session_relation == "Same session"
+]
+cross_session_balanced_accuracy <- siamese_session_results$balanced_accuracy[
+  siamese_session_results$session_relation == "Different sessions"
+]
+siamese_session_difference <- cross_session_balanced_accuracy -
+  same_session_balanced_accuracy
+
 siamese_results <- tibble(
   metric = c("Accuracy", "Balanced accuracy", "Sensitivity (same writer)",
              "Specificity (different writer)", "Validation-selected distance threshold"),
@@ -422,6 +455,7 @@ siamese_results <- tibble(
             test_sensitivity, test_specificity, match_threshold)
 )
 knitr::kable(siamese_results, digits = 3)
+knitr::kable(siamese_session_results, digits = 3)
 ```
 
 ## Results and interpretation
@@ -429,6 +463,8 @@ knitr::kable(siamese_results, digits = 3)
 On the test writers that were held out from training, the Siamese model reached a balanced accuracy of `r sprintf("%.3f", siamese_balanced_accuracy)` using a distance threshold selected only from the validation writers. In other words, it was able to tell when two images were likely written by the same person, while also rejecting pairs from different writers.
 
 Sensitivity here means the proportion of same-writer pairs that were correctly accepted, while specificity means the proportion of different-writer pairs that were correctly rejected. Balanced accuracy gives equal importance to both, which is useful here because we do not want a model that is very good at one class but poor at the other.
+
+The session-stratified table compares test pairs whose images come from the same session with pairs spanning different sessions. Cross-session balanced accuracy was `r sprintf("%.3f", cross_session_balanced_accuracy)` versus `r sprintf("%.3f", same_session_balanced_accuracy)` for within-session pairs, a difference of `r sprintf("%.3f", siamese_session_difference)` (cross-session minus same-session). The threshold remains fixed at the value selected on validation writers. This gives a direct, though still sample-dependent, check of whether session changes coincide with a change in matching performance.
 
 This experiment is closer to a verification task on unseen writers than the CNN task. However, it is still based on only four test writers and a sampled set of pairs, so the result should be read as a useful indicator rather than a universal measure of real-world performance.
 
@@ -444,7 +480,7 @@ The two models answer slightly different questions. The CNN asks: “Which known
 
 Looking at the digit-specific CNN results helps us see which digits were easier to classify in this experiment. The pattern should be explained using the example images, because each digit has its own shape and some are naturally more distinctive than others. The Siamese task also controls for digit identity by comparing images of the same digit only, so it is not measuring general digit difficulty in the same way.
 
-The CNN split used sessions 1–3 for training, session 4 for validation, and session 5 for testing. The Siamese model, by contrast, sampled pairs across available sessions for withheld writers. Looking at the sample images, we should consider whether there are visible session effects, but we should be careful not to overstate this. This design was not built to give a separate numerical estimate of session effect, and a proper session analysis would need a more explicit within-session versus cross-session comparison.
+The CNN was trained on sessions 1–3 and evaluated on sessions 4 and 5; its session-4 score is validation-only, while session 5 is the final test. The Siamese table separately compares same-session and cross-session test pairs from writers held out of training. Read together, these results show whether later-session CNN accuracy and cross-session matching differ in this run. They do not establish that session changes alone caused a difference: there is one split, one training run, and only four test writers for the Siamese model.
 
 ## Limitations
 
@@ -474,6 +510,4 @@ The main lesson is that these models are not directly comparable because they ar
 
 # AI use statement
 
-We used AI tools to help with the coding setup and to improve the structure of the report. In particular, Copilot was used to help troubleshoot the Python/Keras setup, suggest model code, and refine the wording of the report. We checked the code, tested the outputs, and only kept the parts that matched the results we were able to run ourselves.
-
-We did not use AI to invent results or replace our own interpretation. The final writing was reviewed and edited to make it clear, readable, and suitable for an MSc-level assignment. Any code or analysis included in this report was run and checked by us before it was kept.
+We used Copilot for technical support. For Task 1, it checked the report against the brief but did not interpret the image examples; those observations must come from our own review. For Task 2, it reviewed the CNN validation and test code. For Task 3, it helped add a same-session versus cross-session breakdown to the Siamese test evaluation. For Task 4, it reviewed the split strategy and possible leakage. For Task 5, it checked that CNN early stopping matched the validation metric used for dropout selection. For Task 6, it helped identify and address the need to report session-related performance. We checked these changes against the assignment brief and supplied Keras/neural-network notes. No metric values were generated by AI; the report calculates them from the data when rendered. The AI-assisted code and short explanatory additions were retained, while the group remains responsible for running the analysis, checking and interpreting its outputs, and editing the final report in its own words.
