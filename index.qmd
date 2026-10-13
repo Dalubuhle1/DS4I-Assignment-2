@@ -62,7 +62,7 @@ It is important to be realistic here: this is a simulated dataset, not real hand
 
 ## Structure and balance
 
-Before fitting any model, it helps to check the basic structure of the data. We confirmed the image dimensions, the range of pixel values, and the number of examples for each writer, digit, and session. The design is meant to be balanced, so any unusual counts would be a warning sign before training begins.
+The data set is a list with an image array and a metadata table. The array has dimension 25000 x 28 x 28 x 1, so 25,000 images of 28 x 28 pixels with one channel. Pixel values are integers from 0 to 255; we divided by 255 before modelling. About 84.7% of pixels are exactly zero (background) and there are only 163 distinct grey levels in the whole array. The metadata has one row per image with image_id, person_id, digit, session and replicate, and there are no missing values. The design is balanced: all 500 combinations of writer, digit and session contain exactly 50 images, which gives 1,250 images per writer, 5,000 per digit and 5,000 per session. The total matches the expected 25,000, and there are 0 exact duplicate images.
 
 ```{r}
 dim(x)
