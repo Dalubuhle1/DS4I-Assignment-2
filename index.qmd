@@ -1,7 +1,7 @@
 ---
 title: "Writer identification in simulated handwriting"
 subtitle: "STA5073Z Data Science for Industry — Assignment 2"
-author: "[Add group members]"
+authors: "MBNDAL001, "
 date: today
 ---
 
@@ -62,7 +62,11 @@ It is important to be realistic here: this is a simulated dataset, not real hand
 
 ## Structure and balance
 
+<<<<<<< HEAD
 The data set is a list with an image array and a metadata table. The array has dimension 25000 x 28 x 28 x 1, so 25,000 images of 28 x 28 pixels with one channel. Pixel values are integers from 0 to 255; we divided by 255 before modelling. About 84.7% of pixels are exactly zero (background) and there are only 163 distinct grey levels in the whole array. The metadata has one row per image with image_id, person_id, digit, session and replicate, and there are no missing values. The design is balanced: all 500 combinations of writer, digit and session contain exactly 50 images, which gives 1,250 images per writer, 5,000 per digit and 5,000 per session. The total matches the expected 25,000, and there are 0 exact duplicate images.
+=======
+The data contain 25,000 grayscale images of size 28 × 28 pixels, from 20 writers, five digits (0–4), and five sessions. Pixel values are scaled to [0, 1] before fitting the models. The metadata check below confirms 50 replicates in every writer–digit–session cell, so no writer, digit, or session is over-represented in this simulated design. This balance makes the overall accuracy and the per-digit comparison easier to interpret, although it does not make the images representative of real handwriting.
+>>>>>>> dev
 
 ```{r}
 dim(x)
@@ -83,7 +87,7 @@ metadata %>%
 
 ## Examples across writers and digits
 
-The figures below show a few sample images so we can look for patterns by eye. The first plot gives one example from five writers for each digit, all from session 1. The second plot keeps the writer and digit fixed and shows how that same writer’s style changes across sessions. This is useful because handwriting is not always perfectly identical even when the same person writes the same digit.
+The first figure shows one session-1 example of each digit from five sampled writers; the second holds one sampled writer and digit fixed across all five sessions. In the first figure, the same digit is not drawn identically by every writer: the examples differ in size, stroke weight, slant, and the shape of individual strokes. In the session comparison, the selected writer's digit remains recognisable across sessions, with small pixel-level differences in stroke thickness and placement. These examples suggest that the images retain some writer-specific shape while also varying between recordings. They are only a small sample, however, and cannot establish how much variation occurs across all writers and digits.
 
 ```{r}
 set.seed(5073)
@@ -136,7 +140,7 @@ session_examples <- metadata %>%
 plot_examples(session_examples, session ~ .)
 ```
 
-When we look at the rendered images, we should pay attention to things like stroke shape, slant, thickness, spacing, and how consistent the writing is across sessions. Some digits may look cleaner or more distinctive than others, while others may appear more variable. We also need to remember that these are simulated images, so they are cleaner and more structured than real handwriting and do not fully represent natural variation in pen pressure, scan quality, or writing habits.
+The examples make clear that visually separating writers is not uniformly easy across digits: a simple digit can have similar outlines across people, while small differences in stroke shape may be informative. The session examples also show why evaluation on later sessions matters even when the broad digit shape is stable. Since the images are simulated, they do not capture the full range of natural handwriting, pen pressure, scanning quality, or writing conditions. The sample plots should therefore be treated as illustrations, not as evidence about all writers or real-world handwriting.
 
 # 2. CNN writer identification
 
@@ -244,13 +248,13 @@ knitr::kable(cnn_by_digit, digits = 3)
 
 ## Results and interpretation
 
-The CNN achieved an overall test accuracy of `r sprintf("%.3f", cnn_accuracy)` on session 5. For 20 equally balanced classes, random guessing would give a chance accuracy of 0.05. In simple terms, this means the model performed well above chance, but the result should still be read carefully.
+On the untouched session-5 test set, the CNN correctly identified `r sprintf("%.1f", 100 * cnn_accuracy)`% of images (`r round(cnn_accuracy * length(test_idx))` of `r length(test_idx)`). With 20 balanced writer classes, uniform random guessing would achieve 5% accuracy, so this result is substantially above that baseline. In practical terms, accuracy is the fraction of later-session images assigned the correct ID among the 20 writers already represented during training; it is not a measure of recognising a previously unseen writer.
 
-The digit-specific results were not identical across digits. In this run, digit `r cnn_by_digit$digit[which.max(cnn_by_digit$accuracy)]` performed best (`r sprintf("%.3f", max(cnn_by_digit$accuracy))`), while digit `r cnn_by_digit$digit[which.min(cnn_by_digit$accuracy)]` was the weakest (`r sprintf("%.3f", min(cnn_by_digit$accuracy))`). These are descriptive results from one split and one training run, so they should be considered alongside the sample images rather than treated as a universal statement that one digit is always easier to classify.
+Performance differed by digit: digit `r cnn_by_digit$digit[which.max(cnn_by_digit$accuracy)]` was classified best (`r sprintf("%.1f", 100 * max(cnn_by_digit$accuracy))`%), while digit `r cnn_by_digit$digit[which.min(cnn_by_digit$accuracy)]` was weakest (`r sprintf("%.1f", 100 * min(cnn_by_digit$accuracy))`%), a gap of `r sprintf("%.1f", 100 * (max(cnn_by_digit$accuracy) - min(cnn_by_digit$accuracy)))` percentage points. In this run, digits 3 and 4 were the strongest and digit 1 the weakest. This suggests that the shape of the digit can affect how much writer-specific evidence the CNN can use, but per-digit accuracy is only an indirect indicator of writer information: it also reflects the model's errors and the particular test examples. The confusion matrix helps show which writer IDs were mistaken for others.
 
-The table above compares the CNN's accuracy on session 4 and session 5. The held-out test minus validation difference is `r sprintf("%.3f", cnn_session_difference)`. The session-4 result is not an independent estimate because it was used to select the dropout setting; session 5 is the held-out test result. A difference between these scores is consistent with a session shift, but should be interpreted cautiously because it comes from one split and one training run.
+Session-4 validation accuracy was `r sprintf("%.3f", cnn_session_results$accuracy[cnn_session_results$session == 4])` and session-5 test accuracy was `r sprintf("%.3f", cnn_session_results$accuracy[cnn_session_results$session == 5])`, a test-minus-validation difference of `r sprintf("%.3f", cnn_session_difference)`. The test score is slightly higher, so this run does not show a drop in CNN accuracy from session 4 to session 5. This small difference is not evidence that sessions have no effect: session 4 was used for model selection, and both values come from one split and one training run.
 
-This is a closed-set result: the test writers were already known to the model, but their session-5 samples were new to it. That means it does not tell us how the model would do on a completely new person. The confusion matrix below is also useful because raw accuracy can hide patterns such as certain writers being confused with one another.
+This is a closed-set result: the test writers were known to the model, but their session-5 samples were held out. The session-based split prevents the model from being tested on images from the training sessions, while keeping writer IDs in all sets is necessary for this classification task. It does not estimate performance on a completely new person. The confusion matrix is also useful because overall accuracy can hide specific writer IDs that are often confused.
 
 ```{r}
 cnn_confusion <- table(
@@ -264,9 +268,9 @@ knitr::kable(as.data.frame.matrix(cnn_confusion))
 
 ## Pair construction and evaluation split
 
-For the Siamese model, we used writer-disjoint groups: 12 writers for training, four for validation, and four for testing. That means no writer appearing in the validation or test pairs was used in the training pairs. This is a different question from the CNN: here we are asking whether the model can match handwriting from writers it has never seen before.
+For the Siamese model, we used writer-disjoint groups: 12 writers for training, four for validation, and four for testing. No validation or test writer therefore appears in training, so this evaluates whether the model can compare images from writers it has never seen before. This is a different generalisation target from the CNN, where the same known writers appear across the session-based splits.
 
-Each pair uses the same digit on both sides, which helps control for digit identity. Positive pairs contain two different images from the same writer and the same digit, while negative pairs contain images from two different writers but the same digit. The training, validation, and test sets were balanced between positive and negative labels. Because the pair selection sampled across the available sessions, the test set also includes some session variation.
+Each pair uses the same digit on both sides, which controls for digit identity. Positive pairs contain two different images from the same writer and digit; negative pairs contain images from different writers but the same digit. Each split has equal numbers of positive and negative pairs, and pairs are sampled across sessions. The writer-level split prevents direct train/test writer overlap, but sampling pairs repeatedly means individual images and writers can contribute to multiple pairs within a split. Pair-level observations are consequently related rather than independent.
 
 ```{r}
 set.seed(5073)
@@ -449,27 +453,27 @@ knitr::kable(siamese_session_results, digits = 3)
 
 ## Results and interpretation
 
-On the test writers that were held out from training, the Siamese model reached a balanced accuracy of `r sprintf("%.3f", siamese_balanced_accuracy)` using a distance threshold selected only from the validation writers. In other words, it was able to tell when two images were likely written by the same person, while also rejecting pairs from different writers.
+On the four test writers held out from training, the Siamese model reached a balanced accuracy of `r sprintf("%.3f", siamese_balanced_accuracy)` using a distance threshold selected only from the validation writers. At this threshold, sensitivity was `r sprintf("%.3f", test_sensitivity)` and specificity was `r sprintf("%.3f", test_specificity)`. The model therefore detected most same-writer pairs, but was less successful at rejecting different-writer pairs; the balanced accuracy gives equal weight to those two outcomes rather than allowing the stronger sensitivity to dominate.
 
 Sensitivity here means the proportion of same-writer pairs that were correctly accepted, while specificity means the proportion of different-writer pairs that were correctly rejected. Balanced accuracy gives equal importance to both, which is useful here because we do not want a model that is very good at one class but poor at the other.
 
-The session-stratified table compares test pairs whose images come from the same session with pairs spanning different sessions. Cross-session balanced accuracy was `r sprintf("%.3f", cross_session_balanced_accuracy)` versus `r sprintf("%.3f", same_session_balanced_accuracy)` for within-session pairs, a difference of `r sprintf("%.3f", siamese_session_difference)` (cross-session minus same-session). The threshold remains fixed at the value selected on validation writers. This gives a direct, though still sample-dependent, check of whether session changes coincide with a change in matching performance.
+The session-stratified table compares test pairs whose images come from the same session with pairs spanning different sessions. Cross-session balanced accuracy was `r sprintf("%.3f", cross_session_balanced_accuracy)` versus `r sprintf("%.3f", same_session_balanced_accuracy)` for within-session pairs, a difference of `r sprintf("%.3f", siamese_session_difference)` (cross-session minus same-session). This is consistent with matching being harder across sessions in this test sample. The threshold was held fixed at the value selected on validation writers, but the comparison is descriptive: the groups differ in size and contain repeated writers/images, and this single sample cannot establish that session changes caused the difference.
 
 This experiment is closer to a verification task on unseen writers than the CNN task. However, it is still based on only four test writers and a sampled set of pairs, so the result should be read as a useful indicator rather than a universal measure of real-world performance.
 
 # 4. Hyperparameter sensitivity
 
-For the CNN, we compared two dropout values and recorded their validation accuracy on session 4. The model with the higher validation score was selected, and the session-5 test set was only used after that decision. This gives a simple sensitivity check, but it is limited because we only tested two settings and used one random seed.
+For the CNN, dropout 0.2 achieved a best session-4 validation accuracy of `r sprintf("%.3f", cnn_tuning$best_validation_accuracy[which(cnn_tuning$dropout == 0.2)])`, while dropout 0.4 achieved `r sprintf("%.3f", cnn_tuning$best_validation_accuracy[which(cnn_tuning$dropout == 0.4)])`. Based on the displayed rounded values, dropout 0.4 improved validation accuracy by `r sprintf("%.3f", diff(round(cnn_tuning$best_validation_accuracy, 3)))` (`r sprintf("%.1f", 100 * diff(round(cnn_tuning$best_validation_accuracy, 3)))` percentage points). We therefore selected dropout `r cnn_tuning$dropout[best_cnn_index]`; the session-5 test set was not used to choose between settings. This is evidence that the result was sensitive to this choice in this run, but the search was deliberately small, used one random seed, and does not establish that 0.4 is generally optimal.
 
 For the Siamese model, we kept the architecture and contrastive margin fixed so the comparison stayed manageable. A more detailed study could explore different margins or embedding sizes, but any such tuning would need to be done only on the validation writers. We should avoid adjusting the model based on the test writers.
 
 # 5. Comparison and discussion
 
-The two models answer slightly different questions. The CNN asks: “Which known writer produced this image?” The Siamese model asks: “Do these two images likely come from the same writer?” Because of this, the CNN score (`r sprintf("%.3f", cnn_accuracy)`) and the Siamese balanced accuracy (`r sprintf("%.3f", siamese_balanced_accuracy)`) are not directly interchangeable.
+The two models answer different questions. The CNN asks which known writer produced one image and achieved test accuracy of `r sprintf("%.3f", cnn_accuracy)` on later sessions. The Siamese model asks whether a pair of images from the same digit was written by the same person and achieved balanced accuracy of `r sprintf("%.3f", siamese_balanced_accuracy)` on unseen writers. These scores are not directly interchangeable: the class counts, test writers, split strategy, and decision units differ.
 
-Looking at the digit-specific CNN results helps us see which digits were easier to classify in this experiment. The pattern should be explained using the example images, because each digit has its own shape and some are naturally more distinctive than others. The Siamese task also controls for digit identity by comparing images of the same digit only, so it is not measuring general digit difficulty in the same way.
+The CNN's strongest results on digits 3 and 4 and weakest result on digit 1 suggest that some digit shapes carried more useful writer information for this model and test sample. The sampled images show visible differences in stroke shape, size, and weight between writers, while the selected same-writer digit is broadly consistent across sessions. These visual observations are plausible context for the accuracy pattern, not proof that a particular shape caused it. The Siamese task controls for digit identity within each pair, so its result instead reflects how well the embeddings capture writer similarity beyond the shared digit.
 
-The CNN was trained on sessions 1–3 and evaluated on sessions 4 and 5; its session-4 score is validation-only, while session 5 is the final test. The Siamese table separately compares same-session and cross-session test pairs from writers held out of training. Read together, these results show whether later-session CNN accuracy and cross-session matching differ in this run. They do not establish that session changes alone caused a difference: there is one split, one training run, and only four test writers for the Siamese model.
+For the CNN, session-5 accuracy was `r sprintf("%.3f", cnn_session_difference)` higher than session-4 validation accuracy, so this run shows no later-session decline for known writers. For Siamese matching, cross-session balanced accuracy was `r sprintf("%.3f", abs(siamese_session_difference))` lower than within-session balanced accuracy. Together these results do not support a single blanket conclusion that sessions either do or do not affect performance: the CNN and Siamese tasks and writer splits differ, and the Siamese comparison is based on four test writers and one sampled set of pairs. Additional writer/session splits and repeated runs would be needed to establish a stable session effect.
 
 ## Limitations
 
@@ -489,9 +493,9 @@ Before submission, add the group members and roles to the required text file, in
 
 # Conclusion
 
-This assignment compared two different ways of identifying writers from simulated handwriting images. The CNN was used to classify a digit image into one of 20 known writers, while the Siamese model was used to decide whether two images were likely written by the same person. The results show that both approaches can work on this dataset, but the performance depends heavily on the evaluation setup and the nature of the task.
+The CNN correctly identified `r sprintf("%.1f", 100 * cnn_accuracy)`% of session-5 images from writers seen during training, well above its 5% chance baseline; its accuracy ranged from `r sprintf("%.1f", 100 * min(cnn_by_digit$accuracy))`% for digit `r cnn_by_digit$digit[which.min(cnn_by_digit$accuracy)]` to `r sprintf("%.1f", 100 * max(cnn_by_digit$accuracy))`% for digit `r cnn_by_digit$digit[which.max(cnn_by_digit$accuracy)]`. Dropout `r cnn_tuning$dropout[best_cnn_index]` was selected over the alternative after validation, without using the test set. The Siamese model achieved `r sprintf("%.1f", 100 * siamese_balanced_accuracy)`% balanced accuracy on pairs from unseen writers, with higher sensitivity than specificity, and its cross-session performance was lower than its within-session performance in this sample.
 
-The main lesson is that these models are not directly comparable because they are solving different problems. The CNN tests recognition of known writers across later sessions, while the Siamese model tests matching ability for writers it has not seen before. The real value of this analysis is that it shows how model design, data splits, and evaluation choices shape the result.
+These findings are promising for the simulated data but do not establish real-world handwriting identification performance. The CNN and Siamese results address different tasks, the Siamese test includes only four writers, and the sampled pairs are not independent. The observed session and digit patterns should therefore be treated as findings from this run, not universal effects.
 
 # Plagiarism declaration
 
@@ -499,4 +503,4 @@ The main lesson is that these models are not directly comparable because they ar
 
 # AI use statement
 
-We used Copilot for technical support. For Task 1, it checked the report against the brief but did not interpret the image examples; those observations must come from our own review. For Task 2, it reviewed the CNN validation and test code. For Task 3, it helped add a same-session versus cross-session breakdown to the Siamese test evaluation. For Task 4, it reviewed the split strategy and possible leakage. For Task 5, it checked that CNN early stopping matched the validation metric used for dropout selection. For Task 6, it helped identify and address the need to report session-related performance. We checked these changes against the assignment brief and supplied Keras/neural-network notes. No metric values were generated by AI; the report calculates them from the data when rendered. The AI-assisted code and short explanatory additions were retained, while the group remains responsible for running the analysis, checking and interpreting its outputs, and editing the final report in its own words.
+We used Copilot to review the assessment writeup against the assignment questions and to help edit explanatory wording for clarity. The group supplied the analysis methodology and implementation, generated the results, and performed the data and result checks. Copilot did not develop or implement the analysis methodology, generate the results, or perform those checks. The group reviewed the revised writeup and remains responsible for the analysis, its interpretation, and the submitted report.
