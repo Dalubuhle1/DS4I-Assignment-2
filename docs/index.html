@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.19">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-10-16">
+
+<title>Writer identification in simulated handwriting – DS4I Assignment 2</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-172ba59bd5e0b52282274ba0c0cc16fc.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">DS4I Assignment 2</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="./index.html" aria-current="page"> 
+<span class="menu-text">Report</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#one-time-r-setup" id="toc-one-time-r-setup" class="nav-link active" data-scroll-target="#one-time-r-setup">One-time R setup</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#data-exploration" id="toc-data-exploration" class="nav-link" data-scroll-target="#data-exploration"><span class="header-section-number">1</span> Data exploration</a>
+  <ul class="collapse">
+  <li><a href="#structure-and-balance" id="toc-structure-and-balance" class="nav-link" data-scroll-target="#structure-and-balance"><span class="header-section-number">1.1</span> Structure and balance</a></li>
+  <li><a href="#examples-across-writers-and-digits" id="toc-examples-across-writers-and-digits" class="nav-link" data-scroll-target="#examples-across-writers-and-digits"><span class="header-section-number">1.2</span> Examples across writers and digits</a></li>
+  </ul></li>
+  <li><a href="#cnn-writer-identification" id="toc-cnn-writer-identification" class="nav-link" data-scroll-target="#cnn-writer-identification"><span class="header-section-number">2</span> CNN writer identification</a>
+  <ul class="collapse">
+  <li><a href="#prediction-task" id="toc-prediction-task" class="nav-link" data-scroll-target="#prediction-task"><span class="header-section-number">2.1</span> Prediction task</a></li>
+  <li><a href="#split-and-model" id="toc-split-and-model" class="nav-link" data-scroll-target="#split-and-model"><span class="header-section-number">2.2</span> Split and model</a></li>
+  <li><a href="#results-and-interpretation" id="toc-results-and-interpretation" class="nav-link" data-scroll-target="#results-and-interpretation"><span class="header-section-number">2.3</span> Results and interpretation</a></li>
+  </ul></li>
+  <li><a href="#siamese-same-writer-matching" id="toc-siamese-same-writer-matching" class="nav-link" data-scroll-target="#siamese-same-writer-matching"><span class="header-section-number">3</span> Siamese same-writer matching</a>
+  <ul class="collapse">
+  <li><a href="#pair-construction-and-evaluation-split" id="toc-pair-construction-and-evaluation-split" class="nav-link" data-scroll-target="#pair-construction-and-evaluation-split"><span class="header-section-number">3.1</span> Pair construction and evaluation split</a></li>
+  <li><a href="#network-and-contrastive-loss" id="toc-network-and-contrastive-loss" class="nav-link" data-scroll-target="#network-and-contrastive-loss"><span class="header-section-number">3.2</span> Network and contrastive loss</a></li>
+  <li><a href="#results-and-interpretation-1" id="toc-results-and-interpretation-1" class="nav-link" data-scroll-target="#results-and-interpretation-1"><span class="header-section-number">3.3</span> Results and interpretation</a></li>
+  </ul></li>
+  <li><a href="#hyperparameter-sensitivity" id="toc-hyperparameter-sensitivity" class="nav-link" data-scroll-target="#hyperparameter-sensitivity"><span class="header-section-number">4</span> Hyperparameter sensitivity</a></li>
+  <li><a href="#comparison-and-discussion" id="toc-comparison-and-discussion" class="nav-link" data-scroll-target="#comparison-and-discussion"><span class="header-section-number">5</span> Comparison and discussion</a>
+  <ul class="collapse">
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations"><span class="header-section-number">5.1</span> Limitations</a></li>
+  </ul></li>
+  <li><a href="#reproducibility-and-collaboration" id="toc-reproducibility-and-collaboration" class="nav-link" data-scroll-target="#reproducibility-and-collaboration"><span class="header-section-number">6</span> Reproducibility and collaboration</a></li>
+  <li><a href="#plagiarism-declaration" id="toc-plagiarism-declaration" class="nav-link" data-scroll-target="#plagiarism-declaration">Plagiarism declaration</a></li>
+  <li><a href="#ai-use-statement" id="toc-ai-use-statement" class="nav-link" data-scroll-target="#ai-use-statement">AI use statement</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Writer identification in simulated handwriting</h1>
+<p class="subtitle lead">STA5073Z Data Science for Industry — Assignment 2</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Buntu Mlonyeni MLNBUN002 &amp; Dalubuhle Mbune MBNDAL001 </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 16, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="one-time-r-setup" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="one-time-r-setup">One-time R setup</h2>
+</section>
+<section id="introduction" class="level1 unnumbered">
+<h1 class="unnumbered">Introduction</h1>
+<p>This assignment looks at whether a model can tell which person wrote a digit from a small image. We worked with a simulated dataset of 25,000 grayscale images, each measuring 28 × 28 pixels. There are 20 fictional writers, and each writer produced digits 0 to 4 across five sessions.</p>
+<p>We tested two different approaches. First, we trained a convolutional neural network (CNN) to classify each image into one of 20 writer IDs (closed-set identification). Second, we trained a Siamese network to compare two images and decide whether they came from the same writer (verification). These are not the same task, so we do not treat their scores as directly comparable.</p>
+<p>The report first checks the images and metadata, then evaluates the CNN on later sessions from known writers and the Siamese network on writers held out from training. It finishes by comparing what these two evaluations can—and cannot—tell us.</p>
+<p>This is a simulated dataset, not real handwriting. The results therefore describe how these models behave on this dataset, not how they would perform on actual handwriting in everyday settings.</p>
+</section>
+<section id="data-exploration" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Data exploration</h1>
+<section id="structure-and-balance" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="structure-and-balance"><span class="header-section-number">1.1</span> Structure and balance</h2>
+<p>The data file contains an image array and a metadata table, with one metadata row for each image. Pixel values were scaled to [0, 1] before fitting either network. The checks below summarize the image array, metadata completeness, pixel distribution, and balance of the writer, digit, and session design.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 71%">
+<col style="width: 28%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Data check</th>
+<th style="text-align: left;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Image array dimensions</td>
+<td style="text-align: left;">25000 x 28 x 28 x 1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Scaled pixel range</td>
+<td style="text-align: left;">0 to 1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Pixels equal to background (0)</td>
+<td style="text-align: left;">84.7%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Distinct pixel levels</td>
+<td style="text-align: left;">163</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Missing metadata values</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Images per writer (min to max)</td>
+<td style="text-align: left;">1250 to 1250</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Images per digit (min to max)</td>
+<td style="text-align: left;">5000 to 5000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Images per session (min to max)</td>
+<td style="text-align: left;">5000 to 5000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Images per writer-digit-session cell (min to max)</td>
+<td style="text-align: left;">50 to 50</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="examples-across-writers-and-digits" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="examples-across-writers-and-digits"><span class="header-section-number">1.2</span> Examples across writers and digits</h2>
+<p>The figures below show a few sample images so we can look for patterns by eye. The first plot gives one example from five writers for each digit, all from session 1. The second plot keeps the writer and digit fixed and shows how that same writer’s style changes across sessions. This is useful because handwriting is not always perfectly identical even when the same person writes the same digit.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In the examples, the digits are clean, centred strokes on a mostly empty background. The most visible differences between writers are in features such as slant and proportions; the same writer’s shape also shifts somewhat between sessions. Some of the replicate images within a writer-digit-session group look very similar, so the large image count should not be mistaken for an equally large number of independent writing styles. These are qualitative observations from the displayed examples, not measurements of every image. The simulated images also lack much of the variation in pen, paper, and scanning found in real handwriting.</p>
+</section>
+</section>
+<section id="cnn-writer-identification" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> CNN writer identification</h1>
+<section id="prediction-task" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="prediction-task"><span class="header-section-number">2.1</span> Prediction task</h2>
+<p>The response is the writer ID and the input is one 28 × 28 image. The metadata identifies writers as 1–20; the model uses the equivalent zero-based class labels 0–19. With 20 balanced writer classes, chance accuracy is 1/20, or 5%.</p>
+</section>
+<section id="split-and-model" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="split-and-model"><span class="header-section-number">2.2</span> Split and model</h2>
+<p>The CNN was trained to predict one of 20 writer IDs. We used sessions 1–3 for training, session 4 for choosing the dropout value, and session 5 for the final test result. This is a standard way to test whether the model can still recognise the same writers when the writing comes from a later session.</p>
+<p>This split matters because all 20 writers are present in every set. That is necessary for a closed-set classification problem: the model cannot correctly identify a writer it never saw during training. By holding out an entire session, we avoid testing on nearly identical samples from the same recording session and instead check whether the model generalises to later writing samples.</p>
+<p>We compared two dropout values as a small, planned hyperparameter check. The model selection was done using the validation session only, and session 5 remained untouched until the final evaluation.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 14%">
+<col style="width: 25%">
+<col style="width: 33%">
+<col style="width: 11%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">dropout</th>
+<th style="text-align: right;">learning_rate</th>
+<th style="text-align: right;">best_validation_accuracy</th>
+<th style="text-align: right;">validation_loss_at_best_accuracy</th>
+<th style="text-align: right;">best_epoch</th>
+<th style="text-align: left;">selected</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.552</td>
+<td style="text-align: right;">2.757</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.588</td>
+<td style="text-align: right;">3.050</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.4</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.588</td>
+<td style="text-align: right;">2.065</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.4</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.571</td>
+<td style="text-align: right;">1.679</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">session</th>
+<th style="text-align: left;">role</th>
+<th style="text-align: right;">accuracy</th>
+<th style="text-align: right;">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">Validation (used for model selection)</td>
+<td style="text-align: right;">0.588</td>
+<td style="text-align: right;">5000</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">Held-out test</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">5000</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">digit</th>
+<th style="text-align: right;">accuracy</th>
+<th style="text-align: right;">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.598</td>
+<td style="text-align: right;">1000</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.663</td>
+<td style="text-align: right;">1000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.691</td>
+<td style="text-align: right;">1000</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.641</td>
+<td style="text-align: right;">1000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.687</td>
+<td style="text-align: right;">1000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="results-and-interpretation" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="results-and-interpretation"><span class="header-section-number">2.3</span> Results and interpretation</h2>
+<p>The CNN achieved an overall test accuracy of 0.656 on session 5. For 20 equally balanced classes, random guessing would give a chance accuracy of 0.05. In simple terms, this means the model performed well above chance, but the result should still be read carefully.</p>
+<p>For practical identification, the correct writer appeared among the model’s three highest-ranked candidates in 87.1% of test images. Top-three accuracy is not the same as a correct single-name prediction; it describes how often a short candidate list would include the writer.</p>
+<p>The digit-specific results were not identical across digits. In this run, digit 2 performed best (0.691), while digit 0 was the weakest (0.598). Since the test set is balanced, per-digit accuracy gives a simple indication of how useful each digit was for identifying writers in this CNN. It is not a pure measure of writer information: digit-specific shape variation and the model’s limitations may also affect the result.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>CNN writer identification accuracy on the held-out fifth session, shown separately for each digit.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The table above compares the CNN’s accuracy on session 4 and session 5. The held-out test minus validation difference is 0.068. The session-4 result is not an independent estimate because it was used to select the dropout setting; session 5 is the held-out test result. A difference between these scores is consistent with a session shift, but should be interpreted cautiously because it comes from one split and one training run.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>CNN accuracy on validation session 4 and held-out test session 5. The dashed line marks the 5% chance level.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This is a closed-set result: the test writers were already known to the model, but their session-5 samples were new to it. That means it does not tell us how the model would do on a completely new person. The row-normalized confusion plot below shows the proportion of each writer’s images assigned to each predicted writer, making consistent confusions easier to spot than in a large count table.</p>
+<p>In a second descriptive check, we average the model’s predicted probabilities across randomly selected images of different digits from the same writer in session 5. The plot below shows how identification accuracy changes as more distinct digits are combined. This represents a use case with several images from one person; it does not change the single-image test result above.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>CNN writer identification accuracy after averaging predicted probabilities over one to five distinct digits from the same writer in session 5. Each point averages 1,000 random selections per writer.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The images used in each draw are sampled independently from the available replicates for each digit. The resulting curve is a descriptive estimate for this test session and should not be treated as an independent-sample confidence interval.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Row-normalized confusion matrix for CNN predictions on session 5. Diagonal cells are correct predictions.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="siamese-same-writer-matching" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Siamese same-writer matching</h1>
+<section id="pair-construction-and-evaluation-split" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="pair-construction-and-evaluation-split"><span class="header-section-number">3.1</span> Pair construction and evaluation split</h2>
+<p>For the Siamese model, we used writer-disjoint groups: 12 writers for training, four for validation, and four for testing. That means no writer appearing in the validation or test pairs was used in the training pairs. This is a different question from the CNN: here we are asking whether the model can match handwriting from writers it has never seen before.</p>
+<p>Each pair uses the same digit on both sides, which helps control for digit identity. Positive pairs contain two different images from the same writer and the same digit, while negative pairs contain images from two different writers but the same digit. The training, validation, and test sets were balanced between positive and negative labels. Because the pair selection sampled across the available sessions, the test set also includes some session variation.</p>
+</section>
+<section id="network-and-contrastive-loss" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="network-and-contrastive-loss"><span class="header-section-number">3.2</span> Network and contrastive loss</h2>
+<p>Both sides of the network share the same encoder. The model is trained with contrastive loss, which encourages same-writer pairs to sit close together in the embedding space and pushes different-writer pairs further apart. We used a margin of 1, meaning that pairs that are too close when they should be different are penalized. The final distance between two images is computed from the Euclidean distance between their learned embeddings.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">metric</th>
+<th style="text-align: right;">value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Accuracy</td>
+<td style="text-align: right;">0.841</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Balanced accuracy</td>
+<td style="text-align: right;">0.841</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sensitivity (same writer)</td>
+<td style="text-align: right;">0.885</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Specificity (different writer)</td>
+<td style="text-align: right;">0.796</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ROC-AUC</td>
+<td style="text-align: right;">0.924</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Validation-selected distance threshold</td>
+<td style="text-align: right;">0.549</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 10%">
+<col style="width: 11%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">session_relation</th>
+<th style="text-align: right;">n_pairs</th>
+<th style="text-align: right;">accuracy</th>
+<th style="text-align: right;">sensitivity</th>
+<th style="text-align: right;">specificity</th>
+<th style="text-align: right;">balanced_accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Different sessions</td>
+<td style="text-align: right;">1631</td>
+<td style="text-align: right;">0.827</td>
+<td style="text-align: right;">0.859</td>
+<td style="text-align: right;">0.796</td>
+<td style="text-align: right;">0.827</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Same session</td>
+<td style="text-align: right;">369</td>
+<td style="text-align: right;">0.900</td>
+<td style="text-align: right;">1.000</td>
+<td style="text-align: right;">0.797</td>
+<td style="text-align: right;">0.898</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="results-and-interpretation-1" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="results-and-interpretation-1"><span class="header-section-number">3.3</span> Results and interpretation</h2>
+<p>On the test writers that were held out from training, the Siamese model reached a balanced accuracy of 0.841 using a distance threshold selected only from the validation writers. Its test ROC-AUC was 0.924: across a randomly selected same-writer and different-writer pair, this measures how often the same-writer pair receives the smaller distance, without fixing a decision threshold.</p>
+<p>Sensitivity here means the proportion of same-writer pairs that were correctly accepted, while specificity means the proportion of different-writer pairs that were correctly rejected. Balanced accuracy gives equal importance to both, which is useful here because we do not want a model that is very good at one class but poor at the other.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Embedding distances for same-writer and different-writer test pairs. The dashed line is the threshold selected on validation writers.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The session-stratified table compares test pairs whose images come from the same session with pairs spanning different sessions. Cross-session balanced accuracy was 0.827 versus 0.898 for within-session pairs, a difference of -0.071 (cross-session minus same-session). The threshold remains fixed at the value selected on validation writers. This gives a direct, though still sample-dependent, check of whether session changes coincide with a change in matching performance.</p>
+<p>This experiment is closer to a verification task on unseen writers than the CNN task. However, it is still based on only four test writers and a sampled set of pairs, so the result should be read as a useful indicator rather than a universal measure of real-world performance.</p>
+</section>
+</section>
+<section id="hyperparameter-sensitivity" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Hyperparameter sensitivity</h1>
+<p>For the CNN, we compared a small 2 × 2 grid: dropout rates of 0.2 and 0.4 crossed with Adam learning rates of 0.001 and 0.0005. The table and plot report the best session-4 validation accuracy for each setting, the validation loss at that epoch, and when early stopping restored the best weights. The selected model is the one with the highest validation accuracy; it was evaluated on session 5 only after that choice.</p>
+<p>Validation accuracy varied by 3.6% across the four CNN settings. This is a useful, limited sensitivity check—not evidence that dropout or learning rate alone caused the difference. Each setting was trained with one random seed, and the small search does not cover other choices such as network depth or embedding size. We held the Siamese architecture and margin fixed to keep the comparison manageable; the session-5 test results were not used to tune either model.</p>
+</section>
+<section id="comparison-and-discussion" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Comparison and discussion</h1>
+<p>The two models answer slightly different questions. The CNN asks: “Which known writer produced this image?” The Siamese model asks: “Do these two images likely come from the same writer?” The CNN achieved 65.6% accuracy on session 5 while identifying writers seen during training. The Siamese model achieved 84.0% balanced accuracy on pairs from writers excluded from training. These figures describe different generalization settings and should not be ranked against each other.</p>
+<p>The CNN results by digit show which digits were most useful for writer identification in this run; the sample images provide context for those differences. The five-digit aggregation check also shows whether a short list of different digits can help when identifying a writer. These are descriptive results from this split, not proof that a particular digit is consistently most informative. The Siamese task controls for digit identity by comparing images of the same digit.</p>
+<p>For session variation, the CNN’s session-4 and session-5 results compare validation and held-out test performance, while the Siamese table compares same-session and cross-session test pairs. These patterns are descriptive: there is one split and training run, and the Siamese test includes only four writers, so they do not establish that session changes alone caused a performance difference.</p>
+<section id="limitations" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="limitations"><span class="header-section-number">5.1</span> Limitations</h2>
+<ul>
+<li>The images are simulated; performance may not transfer to real handwriting.</li>
+<li>There are only 20 writers. The Siamese writer-disjoint test set contains four writers, so its result can be sensitive to which writers are held out.</li>
+<li>Images within a writer-digit-session cell and pairs sharing writers or images are related observations. Image- and pair-level metrics therefore should not be read as if every observation were independent.</li>
+<li>Only two CNN dropout settings were tested, with one random seed. Report the resulting validation values and treat small differences cautiously.</li>
+<li>The multi-digit aggregation uses repeated random draws from the same test images. It illustrates the potential value of combining different digits; it is not an additional independent test set.</li>
+<li>The CNN and Siamese evaluations target different forms of generalization, as described above.</li>
+</ul>
+</section>
+</section>
+<section id="reproducibility-and-collaboration" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Reproducibility and collaboration</h1>
+<p>This report is maintained as a Quarto document in the GitHub repository. The analysis reads the supplied handwriting.rds file, sets R and Keras random seeds to 5073, and can be rerun from the project directory with quarto render index.qmd. The rendered website is written to docs/index.html. The CNN uses sessions 1–3 for training, session 4 for validation and model selection, and session 5 for the final test. The Siamese model uses separate writer groups for training, validation and testing. Neither model’s final test data is used for selecting its settings.</p>
+<p>The report was developed by Buntu Mlonyeni and Dalubuhle Mbune. ChatGpt and Claude Ai assisted with checking the report against the assignment brief, refining explanations and plots, extending the CNN tuning comparison, adding evaluation summaries, and troubleshooting the Keras and Quarto setup. We remain responsible for running and checking the analysis, interpreting the results.</p>
+</section>
+<section id="plagiarism-declaration" class="level1 unnumbered">
+<h1 class="unnumbered">Plagiarism declaration</h1>
+<blockquote class="blockquote">
+<p>We confirm that this work is our own, and we have not copied or submitted any other person’s writing, code, or analysis as if it were our own. We have checked our sources, understood the work we used, and have written the final report in our own words. We accept responsibility for the content of this assignment and for the accuracy of the results presented here.</p>
+</blockquote>
+</section>
+<section id="ai-use-statement" class="level1 unnumbered">
+<h1 class="unnumbered">AI use statement</h1>
+<p>We used ChatGPT and Claude for technical support. For Task 1, it checked the report against the brief but did not interpret the image examples; those observations must come from our own review. For Task 2, it reviewed the CNN validation and test code and helped add top-three accuracy and a repeated-draw check of predictions combined across different digits. For Task 3, it helped add same-session versus cross-session results and threshold-independent ROC-AUC for the Siamese test pairs. For Task 4, it reviewed the split strategy and possible leakage. For Task 5, it checked that CNN early stopping matched the validation metric used for dropout selection. For Task 6, it helped improve how session effects and the limits of digit-specific comparisons are reported. We checked these changes against the assignment brief and supplied Keras/neural-network notes. No metric values were generated by AI; the report calculates them from the data when rendered. The AI-assisted code and explanatory additions were retained, and the group remains responsible for running the analysis, verifying its output, and writing and presenting its interpretation.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
