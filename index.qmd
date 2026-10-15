@@ -462,7 +462,7 @@ knitr::kable(siamese_session_results, digits = 3)
 ```
 
 ## Results and interpretation
- 
+
 On the test writers that were held out from training, the Siamese model reached a balanced accuracy of `r sprintf("%.3f", siamese_balanced_accuracy)` using a distance threshold selected only from the validation writers. In other words, it was able to tell when two images were likely written by the same person, while also rejecting pairs from different writers.
 
 Sensitivity here means the proportion of same-writer pairs that were correctly accepted, while specificity means the proportion of different-writer pairs that were correctly rejected. Balanced accuracy gives equal importance to both, which is useful here because we do not want a model that is very good at one class but poor at the other.
