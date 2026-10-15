@@ -14,7 +14,7 @@ install.packages(c("keras3", "tensorflow"))
 ```
 
 The project may also contain a `.venv` for other tools. To ensure Quarto uses the Keras environment rather than that unrelated environment, select `r-keras` before loading Keras:
-
+ 
 ```r
 Sys.setenv(RETICULATE_PYTHON = reticulate::virtualenv_python("r-keras"))
 library(keras3)
