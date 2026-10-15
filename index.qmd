@@ -1,22 +1,19 @@
 ---
 title: "Writer identification in simulated handwriting"
 subtitle: "STA5073Z Data Science for Industry — Assignment 2"
-authors: "Buntu Mlonyeni & Dalubuhle MBNDAL001"
+authors: "Buntu Mlonyeni MLNBUN002 & Dalubuhle Mbune MBNDAL001"
 date: 16 October 2026
 ---
 
 ## One-time R setup {.unnumbered}
 
-Install the R packages and a compatible Python Keras/TensorFlow environment once in the R console (not in a Quarto chunk), then restart R:
+
 
 ```r
 install.packages(c("keras3", "tensorflow"))
 ```
 
-The project may also contain a `.venv` for other tools. To ensure Quarto uses the Keras environment rather than that unrelated environment, select `r-keras` before loading Keras:
-
 ```r
-Sys.setenv(RETICULATE_PYTHON = reticulate::virtualenv_python("r-keras"))
 library(keras3)
 use_backend("tensorflow")
 tensorflow::tf_config()
@@ -24,18 +21,8 @@ tf <- tensorflow::tf
 tf$constant("hello")
 ```
 
-Restart R after installation. Do not rerun `install_keras()` unless you intend to recreate the environment.
 
 ```{r}
-keras_python <- reticulate::virtualenv_python("r-keras")
-if (!file.exists(keras_python)) {
-  stop(
-    "The r-keras Python environment was not found. Follow the one-time setup ",
-    "instructions above to install Keras and TensorFlow."
-  )
-}
-Sys.setenv(RETICULATE_PYTHON = keras_python)
-
 library(tidyverse)
 library(keras3)
 
@@ -555,7 +542,7 @@ pair_inputs <- function(pairs) {
 
 ## Network and contrastive loss
 
-Both sides of the network share the same encoder. The model is trained with contrastive loss, which encourages same-writer pairs to sit close together in the embedding space and pushes different-writer pairs further apart. We used a margin of 1, meaning that pairs that are too close when they should be different are penalised. The final distance between two images is computed from the Euclidean distance between their learned embeddings.
+Both sides of the network share the same encoder. The model is trained with contrastive loss, which encourages same-writer pairs to sit close together in the embedding space and pushes different-writer pairs further apart. We used a margin of 1, meaning that pairs that are too close when they should be different are penalized. The final distance between two images is computed from the Euclidean distance between their learned embeddings.
 
 ```{r}
 build_siamese <- function(margin = 1) {
@@ -751,17 +738,9 @@ For session variation, the CNN’s session-4 and session-5 results compare valid
 
 # Reproducibility and collaboration
 
-The project repository should contain this Quarto source, the code and data-loading instructions needed to reproduce the analysis, and the rendered site source. Keep the supplied dataset in the repository only if course rules permit it. Group members should use branches and pull requests, with each member's contribution recorded in the submission text file.
+This report is maintained as a Quarto document in the GitHub repository. The analysis reads the supplied handwriting.rds file, sets R and Keras random seeds to 5073, and can be rerun from the project directory with quarto render index.qmd. The rendered website is written to docs/index.html. The CNN uses sessions 1–3 for training, session 4 for validation and model selection, and session 5 for the final test. The Siamese model uses separate writer groups for training, validation and testing. Neither model’s final test data is used for selecting its settings.
 
-The code sets seeds for R and Keras/TensorFlow. Some TensorFlow operations may still be nondeterministic. Record the R, Keras, and TensorFlow versions used for the final run and retain the rendered report and relevant training outputs.
-
-Before submission, add the group members and roles to the required text file, include the GitHub Pages URL and source repository URL, and confirm the Quarto site is published from that repository. The group presentation is a separate deliverable (maximum 20 minutes); all members must attend and present.
-
-# Conclusion {.unnumbered}
-
-On session 5, the CNN identified a known writer from one digit with `r scales::percent(cnn_accuracy, accuracy = 0.1)` accuracy, against a 5% balanced chance rate; averaging predictions across all five digits gave `r scales::percent(cnn_multi_digit$accuracy[cnn_multi_digit$n_digits == 5], accuracy = 0.1)` accuracy in the repeated-draw check. For writer-disjoint Siamese test pairs, the ROC-AUC was `r sprintf("%.3f", siamese_auc)` and balanced accuracy at the validation-selected threshold was `r scales::percent(siamese_balanced_accuracy, accuracy = 0.1)`.
-
-These figures answer different questions, so the CNN and Siamese accuracy values should not be ranked against one another. The CNN tests recognition of known writers in a later session; the Siamese test measures matching ability for writers excluded from training. Across both tasks, evaluation design matters: the findings apply to this small, simulated dataset and should not be assumed to generalize to real handwriting or a wider population.
+The report was developed by Buntu Mlonyeni and Dalubuhle Mbune. ChatGpt and Claude Ai assisted with checking the report against the assignment brief, refining explanations and plots, extending the CNN tuning comparison, adding evaluation summaries, and troubleshooting the Keras and Quarto setup. We remain responsible for running and checking the analysis, interpreting the results.  
 
 # Plagiarism declaration {.unnumbered}
 
