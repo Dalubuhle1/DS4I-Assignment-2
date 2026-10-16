@@ -8,27 +8,31 @@ date: 16 October 2026
 ## One-time R setup {.unnumbered}
 
 
-
-```r
-install.packages(c("keras3", "tensorflow"))
+```{r}
+#| eval: false
+install.packages(c("keras3", "tensorflow"), repos = "https://cloud.r-project.org")
 ```
 
-```r
+```{r}
+#| eval: false
 library(keras3)
 use_backend("tensorflow")
 tensorflow::tf_config()
 tf <- tensorflow::tf
 tf$constant("hello")
+mnist <- dataset_mnist()
+str(mnist, max.level = 2)
+tf$config$list_physical_devices("GPU")
 ```
 
 
 ```{r}
+reticulate::use_virtualenv("r-keras", required = TRUE)
 library(tidyverse)
 library(keras3)
 
 use_backend("tensorflow")
 set.seed(5073)
-set_random_seed(5073)
 
 data <- readRDS("handwriting.rds")
 images <- data$images
