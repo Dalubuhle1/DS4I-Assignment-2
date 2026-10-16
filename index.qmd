@@ -560,7 +560,7 @@ d &= \left\lVert f(x_a)-f(x_b)\right\rVert_2, \\
 \end{aligned}
 $$
 
-Here, \(x_a\) and \(x_b\) are the two input images, \(f(\cdot)\) is the shared encoder, and \(y=1\) for a same-writer pair or \(y=0\) for a different-writer pair. The margin \(m\) is 1 in this analysis. The loss pulls same-writer embeddings together and penalises different-writer embeddings when their distance is less than the margin.
+Here, $x_a$ and $x_b$ are the two input images, $f(\cdot)$ is the shared encoder, and $y=1$ for a same-writer pair or $y=0$ for a different-writer pair. The margin $m$ is 1 in this analysis. The loss pulls same-writer embeddings together and penalises different-writer embeddings when their distance is less than the margin.
 
 We sampled 12,000 training pairs and 2,000 pairs each for validation and testing. The model uses Adam with a learning rate of 0.001, batches of 128, and early stopping on validation loss for up to 15 epochs.
 
