@@ -75,6 +75,35 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -115,26 +144,26 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#data-exploration" id="toc-data-exploration" class="nav-link active" data-scroll-target="#data-exploration">1. Data exploration</a>
+  <li><a href="#data-exploration" id="toc-data-exploration" class="nav-link active" data-scroll-target="#data-exploration"><span class="header-section-number">1</span> Data exploration</a>
   <ul class="collapse">
-  <li><a href="#structure-and-balance" id="toc-structure-and-balance" class="nav-link" data-scroll-target="#structure-and-balance">Structure and balance</a></li>
-  <li><a href="#what-the-images-look-like" id="toc-what-the-images-look-like" class="nav-link" data-scroll-target="#what-the-images-look-like">What the images look like</a></li>
-  <li><a href="#limitations-of-the-simulated-data" id="toc-limitations-of-the-simulated-data" class="nav-link" data-scroll-target="#limitations-of-the-simulated-data">Limitations of the simulated data</a></li>
+  <li><a href="#structure-and-balance" id="toc-structure-and-balance" class="nav-link" data-scroll-target="#structure-and-balance"><span class="header-section-number">1.1</span> Structure and balance</a></li>
+  <li><a href="#what-the-images-look-like" id="toc-what-the-images-look-like" class="nav-link" data-scroll-target="#what-the-images-look-like"><span class="header-section-number">1.2</span> What the images look like</a></li>
+  <li><a href="#limitations-of-the-simulated-data" id="toc-limitations-of-the-simulated-data" class="nav-link" data-scroll-target="#limitations-of-the-simulated-data"><span class="header-section-number">1.3</span> Limitations of the simulated data</a></li>
   </ul></li>
-  <li><a href="#cnn-writer-identification" id="toc-cnn-writer-identification" class="nav-link" data-scroll-target="#cnn-writer-identification">2. CNN writer identification</a>
+  <li><a href="#cnn-writer-identification" id="toc-cnn-writer-identification" class="nav-link" data-scroll-target="#cnn-writer-identification"><span class="header-section-number">2</span> CNN writer identification</a>
   <ul class="collapse">
-  <li><a href="#task-split-and-model" id="toc-task-split-and-model" class="nav-link" data-scroll-target="#task-split-and-model">Task, split, and model</a></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
+  <li><a href="#task-split-and-model" id="toc-task-split-and-model" class="nav-link" data-scroll-target="#task-split-and-model"><span class="header-section-number">2.1</span> Task, split, and model</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results"><span class="header-section-number">2.2</span> Results</a></li>
   </ul></li>
-  <li><a href="#siamese-verification" id="toc-siamese-verification" class="nav-link" data-scroll-target="#siamese-verification">3. Siamese verification</a>
+  <li><a href="#siamese-verification" id="toc-siamese-verification" class="nav-link" data-scroll-target="#siamese-verification"><span class="header-section-number">3</span> Siamese verification</a>
   <ul class="collapse">
-  <li><a href="#task-and-pair-construction" id="toc-task-and-pair-construction" class="nav-link" data-scroll-target="#task-and-pair-construction">Task and pair construction</a></li>
-  <li><a href="#network-and-evaluation" id="toc-network-and-evaluation" class="nav-link" data-scroll-target="#network-and-evaluation">Network and evaluation</a></li>
-  <li><a href="#test-results" id="toc-test-results" class="nav-link" data-scroll-target="#test-results">Test results</a></li>
+  <li><a href="#task-and-pair-construction" id="toc-task-and-pair-construction" class="nav-link" data-scroll-target="#task-and-pair-construction"><span class="header-section-number">3.1</span> Task and pair construction</a></li>
+  <li><a href="#network-and-evaluation" id="toc-network-and-evaluation" class="nav-link" data-scroll-target="#network-and-evaluation"><span class="header-section-number">3.2</span> Network and evaluation</a></li>
+  <li><a href="#test-results" id="toc-test-results" class="nav-link" data-scroll-target="#test-results"><span class="header-section-number">3.3</span> Test results</a></li>
   </ul></li>
-  <li><a href="#evaluation-strategy-and-leakage" id="toc-evaluation-strategy-and-leakage" class="nav-link" data-scroll-target="#evaluation-strategy-and-leakage">4. Evaluation strategy and leakage</a></li>
-  <li><a href="#hyperparameter-optimisation" id="toc-hyperparameter-optimisation" class="nav-link" data-scroll-target="#hyperparameter-optimisation">5. Hyperparameter optimisation</a></li>
-  <li><a href="#comparison-and-critical-discussion" id="toc-comparison-and-critical-discussion" class="nav-link" data-scroll-target="#comparison-and-critical-discussion">6. Comparison and critical discussion</a></li>
+  <li><a href="#evaluation-strategy-and-leakage" id="toc-evaluation-strategy-and-leakage" class="nav-link" data-scroll-target="#evaluation-strategy-and-leakage"><span class="header-section-number">4</span> Evaluation strategy and leakage</a></li>
+  <li><a href="#hyperparameter-optimisation" id="toc-hyperparameter-optimisation" class="nav-link" data-scroll-target="#hyperparameter-optimisation"><span class="header-section-number">5</span> Hyperparameter optimisation</a></li>
+  <li><a href="#comparison-and-critical-discussion" id="toc-comparison-and-critical-discussion" class="nav-link" data-scroll-target="#comparison-and-critical-discussion"><span class="header-section-number">6</span> Comparison and critical discussion</a></li>
   <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   </ul>
@@ -175,11 +204,11 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="data-exploration" class="level1">
-<h1>1. Data exploration</h1>
+<section id="data-exploration" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Data exploration</h1>
 <p>The dataset contains 25,000 simulated grayscale images from 20 writers. Each image is 28 × 28 pixels, and each writer produced digits 0–4 across five sessions. We use it to compare closed-set writer identification with same-writer verification. These tasks use different test designs, so their accuracy values are not directly comparable.</p>
-<section id="structure-and-balance" class="level2">
-<h2 class="anchored" data-anchor-id="structure-and-balance">Structure and balance</h2>
+<section id="structure-and-balance" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="structure-and-balance"><span class="header-section-number">1.1</span> Structure and balance</h2>
 <p>The file contains an image array and one metadata row per image. Pixel values are integers from 0 to 255 and are divided by 255 before modelling. The checks below report the dimensions, pixel range, missing metadata, and balance across writers, digits, sessions, and writer–digit–session cells.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -237,8 +266,8 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="what-the-images-look-like" class="level2">
-<h2 class="anchored" data-anchor-id="what-the-images-look-like">What the images look like</h2>
+<section id="what-the-images-look-like" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="what-the-images-look-like"><span class="header-section-number">1.2</span> What the images look like</h2>
 <p>The first grid shows one image per digit for five sampled writers in session 1. The second holds the writer and digit fixed and shows examples from each session.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -262,15 +291,15 @@ ul.task-list li input[type="checkbox"] {
 </div>
 <p>In these examples, the strokes are centred on a mostly empty background. Slant and proportions vary between writers, while a writer’s digit can also change between sessions. Replicates within a writer–digit–session cell can look very similar. These are observations about the displayed examples, not measurements of every image.</p>
 </section>
-<section id="limitations-of-the-simulated-data" class="level2">
-<h2 class="anchored" data-anchor-id="limitations-of-the-simulated-data">Limitations of the simulated data</h2>
+<section id="limitations-of-the-simulated-data" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="limitations-of-the-simulated-data"><span class="header-section-number">1.3</span> Limitations of the simulated data</h2>
 <p>The images do not represent the variation in pen, paper, cropping, and scanning found in real handwriting. There are only 20 writers and five digits, and each writer–digit–session cell has the same number of images. Replicates within a cell are related observations, so 25,000 images should not be treated as 25,000 independent writing styles. Conclusions below apply to this simulated dataset and the particular splits used.</p>
 </section>
 </section>
-<section id="cnn-writer-identification" class="level1">
-<h1>2. CNN writer identification</h1>
-<section id="task-split-and-model" class="level2">
-<h2 class="anchored" data-anchor-id="task-split-and-model">Task, split, and model</h2>
+<section id="cnn-writer-identification" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> CNN writer identification</h1>
+<section id="task-split-and-model" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="task-split-and-model"><span class="header-section-number">2.1</span> Task, split, and model</h2>
 <p>The task is to predict one of 20 known writer IDs from a single 28 × 28 image. Writer IDs are coded 0–19 for the model. With balanced classes, chance accuracy is 1/20 (5%).</p>
 <p>We trained on sessions 1–3 (15,000 images), used session 4 (5,000) for model selection, and reserved session 5 (5,000) for testing. Every writer and digit appears in each split. This tests whether the model recognises known writers in a later session, not whether it can identify a new writer.</p>
 <p>The CNN has two convolution and max-pooling blocks (32 and 64 filters), followed by flattening, a 64-unit ReLU layer, dropout, and a 20-class softmax. It uses sparse categorical cross-entropy and Adam. We compared four combinations of dropout (0.2 or 0.4) and learning rate (0.001 or 0.0005), with batches of 64 and early stopping on session-4 validation accuracy (up to 15 epochs, patience 3). Session 5 was not used to select the model.</p>
@@ -407,8 +436,8 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="results" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="results"><span class="header-section-number">2.2</span> Results</h2>
 <p>The selected CNN achieved 65.6% accuracy on session 5, compared with a 5% balanced-class chance rate. The correct writer appeared among the three highest-ranked candidates in 87.1% of test images.</p>
 <p>Top-three accuracy is not the same as a correct single-writer prediction; it measures how often the correct writer appears on a short candidate list.</p>
 <p>The digit-specific results were not identical across digits. In this run, digit 2 performed best (0.691), while digit 0 was the weakest (0.598). Since the test set is balanced, per-digit accuracy gives a simple indication of how useful each digit was for identifying writers in this CNN. It is not a pure measure of writer information: digit-specific shape variation and the model’s limitations may also affect the result.</p>
@@ -458,18 +487,24 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </section>
 </section>
-<section id="siamese-verification" class="level1">
-<h1>3. Siamese verification</h1>
-<section id="task-and-pair-construction" class="level2">
-<h2 class="anchored" data-anchor-id="task-and-pair-construction">Task and pair construction</h2>
+<section id="siamese-verification" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Siamese verification</h1>
+<section id="task-and-pair-construction" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="task-and-pair-construction"><span class="header-section-number">3.1</span> Task and pair construction</h2>
 <p>The task is to decide whether two images were written by the same person. We split writers before constructing pairs: 12 writers for training, four for validation, and four for testing. No validation or test writer appears in training, so this protocol tests verification on writers the model has not seen.</p>
 <p>Each pair contains the same digit on both sides to control for digit identity. A positive pair contains different images from the same writer; a negative pair contains images from different writers. Each split has equal numbers of positive and negative pairs. Pairs are sampled across the available sessions.</p>
 </section>
-<section id="network-and-evaluation" class="level2">
-<h2 class="anchored" data-anchor-id="network-and-evaluation">Network and evaluation</h2>
+<section id="network-and-evaluation" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="network-and-evaluation"><span class="header-section-number">3.2</span> Network and evaluation</h2>
 <p>Both inputs pass through the same CNN encoder, which has convolution layers with 32 and 64 filters, two max-pooling steps, and dense layers of 64 and 16 units. The final layer produces a 16-dimensional embedding. We calculate the Euclidean distance between the embeddings and train with contrastive loss,</p>
-<p>[ L = y d^2 + (1-y)(0, 1-d)^2, ]</p>
-<p>where (y=1) for a same-writer pair and (y=0) otherwise. The margin is 1: same-writer pairs are pulled together, while different-writer pairs are penalised when their distance is below the margin.</p>
+<p><span class="math display">\[
+\begin{aligned}
+d &amp;= \left\lVert f(x_a)-f(x_b)\right\rVert_2, \\
+\mathcal{L}(y,d) &amp;= y\,d^2 + (1-y)\left[\max(0, m-d)\right]^2,
+\qquad m=1.
+\end{aligned}
+\]</span></p>
+<p>Here, (x_a) and (x_b) are the two input images, (f()) is the shared encoder, and (y=1) for a same-writer pair or (y=0) for a different-writer pair. The margin (m) is 1 in this analysis. The loss pulls same-writer embeddings together and penalises different-writer embeddings when their distance is less than the margin.</p>
 <p>We sampled 12,000 training pairs and 2,000 pairs each for validation and testing. The model uses Adam with a learning rate of 0.001, batches of 128, and early stopping on validation loss for up to 15 epochs.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -552,8 +587,8 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="test-results" class="level2">
-<h2 class="anchored" data-anchor-id="test-results">Test results</h2>
+<section id="test-results" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="test-results"><span class="header-section-number">3.3</span> Test results</h2>
 <p>We selected the distance threshold using validation writers only, then applied it unchanged to the held-out test writers. On the test pairs, the model achieved a balanced accuracy of 0.841 and an ROC-AUC of 0.924. AUC measures how often a randomly selected same-writer pair receives a smaller distance than a different-writer pair; it does not depend on a decision threshold.</p>
 <p>Sensitivity is the proportion of same-writer pairs correctly accepted; specificity is the proportion of different-writer pairs correctly rejected. Balanced accuracy averages these two rates, giving equal weight to both pair classes.</p>
 <div class="cell">
@@ -569,25 +604,25 @@ ul.task-list li input[type="checkbox"] {
 <p>For pairs within one session, balanced accuracy was 0.898; for pairs across sessions, it was 0.827, a difference of -0.071 (cross-session minus same-session). Both use the same validation-selected threshold. These results describe this sampled set of pairs and four held-out writers; they are not a universal estimate of verification performance.</p>
 </section>
 </section>
-<section id="evaluation-strategy-and-leakage" class="level1">
-<h1>4. Evaluation strategy and leakage</h1>
+<section id="evaluation-strategy-and-leakage" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Evaluation strategy and leakage</h1>
 <p>The CNN and Siamese evaluations estimate different forms of generalisation. The CNN uses all 20 writers in training and tests later-session images from those same writers. The Siamese protocol holds out four writers entirely and tests pairs from those unseen writers. The CNN therefore addresses identification from a fixed list, while the Siamese network addresses whether two samples match for writers not used to fit the model.</p>
 <p>For the CNN, sessions 1–3 are used for training, session 4 for model selection, and session 5 for the final test. For the Siamese network, writers are assigned to train, validation, and test groups before pairs are formed. This prevents the same writer from crossing those partitions. A random image-level split could place near-identical replicates in both training and test sets, inflating performance; the session- and writer-level splits reduce this risk. Images within a writer–digit–session cell can still be similar, and the sampled pairs share writers and images. Image- and pair-level metrics should therefore not be interpreted as if every observation were independent.</p>
 <p>Neither protocol tests performance on real handwriting, new digits, or a larger writer population. The CNN’s fixed candidate list and the Siamese network’s four test writers also constrain how broadly the results can be generalised.</p>
 </section>
-<section id="hyperparameter-optimisation" class="level1">
-<h1>5. Hyperparameter optimisation</h1>
+<section id="hyperparameter-optimisation" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Hyperparameter optimisation</h1>
 <p>For the CNN, we compared a 2 × 2 grid of dropout rates (0.2 and 0.4) and Adam learning rates (0.001 and 0.0005). Each configuration was trained with the same random seed and early stopping on session-4 validation accuracy. The table reports each setting’s best validation accuracy, validation loss at that epoch, and best epoch. We chose the setting with the highest validation accuracy and evaluated it on session 5 only after that choice.</p>
 <p>Validation accuracy varied by 3.6% across the four settings. This small search does not isolate the effect of either parameter, and one seed per setting does not measure seed variability. We held the Siamese architecture and margin fixed; its test results were not used to tune either model.</p>
 </section>
-<section id="comparison-and-critical-discussion" class="level1">
-<h1>6. Comparison and critical discussion</h1>
+<section id="comparison-and-critical-discussion" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Comparison and critical discussion</h1>
 <p>The CNN performs closed-set identification: it chooses one of the 20 writers seen during training. Its session-5 accuracy was 65.6%. The Siamese model performs verification on pairs from writers excluded from training, achieving 84.0% balanced accuracy. These scores are not directly comparable: the tasks, class counts, and test populations differ.</p>
 <p>The CNN’s digit-specific results and multi-digit aggregation describe performance on this split. They do not establish that one digit is consistently more informative, or that the estimated improvement from combining digits would carry over to a new sample. The Siamese pair construction controls for digit identity by comparing images of the same digit.</p>
 <p>The CNN validation and test results compare sessions 4 and 5; the Siamese table compares same-session and cross-session test pairs. These are descriptive comparisons from one split and training run. They do not establish that session changes alone caused any performance difference.</p>
 </section>
-<section id="limitations" class="level1">
-<h1>Limitations</h1>
+<section id="limitations" class="level1 unnumbered">
+<h1 class="unnumbered">Limitations</h1>
 <ul>
 <li>The images are simulated and cover only five digits; results may not transfer to real handwriting or other writing tasks.</li>
 <li>There are 20 writers, and the writer-disjoint Siamese test set contains only four. Its estimates may depend strongly on which writers are held out.</li>
@@ -597,8 +632,8 @@ ul.task-list li input[type="checkbox"] {
 <li>The CNN and Siamese results target different forms of generalisation and should not be ranked against each other.</li>
 </ul>
 </section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
+<section id="conclusion" class="level1 unnumbered">
+<h1 class="unnumbered">Conclusion</h1>
 <p>On session 5, the CNN identified known writers with 65.6% single-image accuracy. Combining all five digits gave 81.9% accuracy in the repeated-draw check. On pairs from four writers held out from Siamese training, the verifier achieved 0.924 ROC-AUC and 84.0% balanced accuracy at a threshold selected on validation writers. These results answer different questions and apply to this simulated dataset and its splits. Related replicates, a small writer population, and session differences limit how confidently the metrics can be generalised.</p>
 
 

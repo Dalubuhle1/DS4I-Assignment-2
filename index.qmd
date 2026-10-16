@@ -3,9 +3,6 @@ title: "Writer identification and verification from simulated handwritten digits
 subtitle: "STA5073Z Data Science for Industry, Assignment 2"
 authors: "Buntu Mlonyeni MLNBUN002 & Dalubuhle Mbune MBNDAL001"
 date: 16 October 2026
-format:
-  html:
-    number-sections: false
 ---
 
 ```{r}
@@ -53,7 +50,7 @@ rm(images)
 data$images <- NULL
 ```
 
-# 1. Data exploration
+# Data exploration
 
 The dataset contains 25,000 simulated grayscale images from 20 writers. Each image is 28 × 28 pixels, and each writer produced digits 0–4 across five sessions. We use it to compare closed-set writer identification with same-writer verification. These tasks use different test designs, so their accuracy values are not directly comparable.
 
@@ -161,7 +158,7 @@ In these examples, the strokes are centred on a mostly empty background. Slant a
 
 The images do not represent the variation in pen, paper, cropping, and scanning found in real handwriting. There are only 20 writers and five digits, and each writer–digit–session cell has the same number of images. Replicates within a cell are related observations, so 25,000 images should not be treated as 25,000 independent writing styles. Conclusions below apply to this simulated dataset and the particular splits used.
 
-# 2. CNN writer identification
+# CNN writer identification
 
 ## Task, split, and model
 
@@ -494,7 +491,7 @@ ggplot(cnn_confusion_plot, aes(x = predicted_writer, y = true_writer, fill = row
   theme(panel.grid = element_blank())
 ```
 
-# 3. Siamese verification
+# Siamese verification
 
 ## Task and pair construction
 
@@ -560,11 +557,15 @@ pair_inputs <- function(pairs) {
 
 Both inputs pass through the same CNN encoder, which has convolution layers with 32 and 64 filters, two max-pooling steps, and dense layers of 64 and 16 units. The final layer produces a 16-dimensional embedding. We calculate the Euclidean distance between the embeddings and train with contrastive loss,
 
-\[
-L = y d^2 + (1-y)\max(0, 1-d)^2,
-\]
+$$
+\begin{aligned}
+d &= \left\lVert f(x_a)-f(x_b)\right\rVert_2, \\
+\mathcal{L}(y,d) &= y\,d^2 + (1-y)\left[\max(0, m-d)\right]^2,
+\qquad m=1.
+\end{aligned}
+$$
 
-where \(y=1\) for a same-writer pair and \(y=0\) otherwise. The margin is 1: same-writer pairs are pulled together, while different-writer pairs are penalised when their distance is below the margin.
+Here, \(x_a\) and \(x_b\) are the two input images, \(f(\cdot)\) is the shared encoder, and \(y=1\) for a same-writer pair or \(y=0\) for a different-writer pair. The margin \(m\) is 1 in this analysis. The loss pulls same-writer embeddings together and penalises different-writer embeddings when their distance is less than the margin.
 
 We sampled 12,000 training pairs and 2,000 pairs each for validation and testing. The model uses Adam with a learning rate of 0.001, batches of 128, and early stopping on validation loss for up to 15 epochs.
 
@@ -743,7 +744,7 @@ ggplot(test_distance_plot, aes(x = distance, color = pair_type, fill = pair_type
 
 For pairs within one session, balanced accuracy was `r sprintf("%.3f", same_session_balanced_accuracy)`; for pairs across sessions, it was `r sprintf("%.3f", cross_session_balanced_accuracy)`, a difference of `r sprintf("%.3f", siamese_session_difference)` (cross-session minus same-session). Both use the same validation-selected threshold. These results describe this sampled set of pairs and four held-out writers; they are not a universal estimate of verification performance.
 
-# 4. Evaluation strategy and leakage
+# Evaluation strategy and leakage
 
 The CNN and Siamese evaluations estimate different forms of generalisation. The CNN uses all 20 writers in training and tests later-session images from those same writers. The Siamese protocol holds out four writers entirely and tests pairs from those unseen writers. The CNN therefore addresses identification from a fixed list, while the Siamese network addresses whether two samples match for writers not used to fit the model.
 
@@ -751,13 +752,13 @@ For the CNN, sessions 1–3 are used for training, session 4 for model selection
 
 Neither protocol tests performance on real handwriting, new digits, or a larger writer population. The CNN’s fixed candidate list and the Siamese network’s four test writers also constrain how broadly the results can be generalised.
 
-# 5. Hyperparameter optimisation
+# Hyperparameter optimisation
 
 For the CNN, we compared a 2 × 2 grid of dropout rates (0.2 and 0.4) and Adam learning rates (0.001 and 0.0005). Each configuration was trained with the same random seed and early stopping on session-4 validation accuracy. The table reports each setting’s best validation accuracy, validation loss at that epoch, and best epoch. We chose the setting with the highest validation accuracy and evaluated it on session 5 only after that choice.
 
 Validation accuracy varied by `r scales::percent(diff(range(cnn_tuning$best_validation_accuracy)), accuracy = 0.1)` across the four settings. This small search does not isolate the effect of either parameter, and one seed per setting does not measure seed variability. We held the Siamese architecture and margin fixed; its test results were not used to tune either model.
 
-# 6. Comparison and critical discussion
+# Comparison and critical discussion
 
 The CNN performs closed-set identification: it chooses one of the 20 writers seen during training. Its session-5 accuracy was `r scales::percent(cnn_accuracy, accuracy = 0.1)`. The Siamese model performs verification on pairs from writers excluded from training, achieving `r scales::percent(siamese_balanced_accuracy, accuracy = 0.1)` balanced accuracy. These scores are not directly comparable: the tasks, class counts, and test populations differ.
 
@@ -765,7 +766,7 @@ The CNN’s digit-specific results and multi-digit aggregation describe performa
 
 The CNN validation and test results compare sessions 4 and 5; the Siamese table compares same-session and cross-session test pairs. These are descriptive comparisons from one split and training run. They do not establish that session changes alone caused any performance difference.
 
-# Limitations
+# Limitations {.unnumbered}
 
 - The images are simulated and cover only five digits; results may not transfer to real handwriting or other writing tasks.
 - There are 20 writers, and the writer-disjoint Siamese test set contains only four. Its estimates may depend strongly on which writers are held out.
@@ -774,6 +775,6 @@ The CNN validation and test results compare sessions 4 and 5; the Siamese table 
 - Multi-digit accuracy is estimated from repeated draws of the same session-5 images. It is descriptive, not an independent test set.
 - The CNN and Siamese results target different forms of generalisation and should not be ranked against each other.
 
-# Conclusion
+# Conclusion {.unnumbered}
 
 On session 5, the CNN identified known writers with `r scales::percent(cnn_accuracy, accuracy = 0.1)` single-image accuracy. Combining all five digits gave `r scales::percent(cnn_multi_digit$accuracy[5], accuracy = 0.1)` accuracy in the repeated-draw check. On pairs from four writers held out from Siamese training, the verifier achieved `r sprintf("%.3f", siamese_auc)` ROC-AUC and `r scales::percent(siamese_balanced_accuracy, accuracy = 0.1)` balanced accuracy at a threshold selected on validation writers. These results answer different questions and apply to this simulated dataset and its splits. Related replicates, a small writer population, and session differences limit how confidently the metrics can be generalised.
