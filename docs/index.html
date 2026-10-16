@@ -305,63 +305,6 @@ window.Quarto = {
 <p>The CNN has two convolution and max-pooling blocks (32 and 64 filters), followed by flattening, a 64-unit ReLU layer, dropout, and a 20-class softmax. It uses sparse categorical cross-entropy and Adam. We compared four combinations of dropout (0.2 or 0.4) and learning rate (0.001 or 0.0005), with batches of 64 and early stopping on session-4 validation accuracy (up to 15 epochs, patience 3). Session 5 was not used to select the model.</p>
 <div class="cell">
 <div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<caption>CNN tuning results on the session-4 validation set.</caption>
-<colgroup>
-<col style="width: 8%">
-<col style="width: 14%">
-<col style="width: 25%">
-<col style="width: 33%">
-<col style="width: 11%">
-<col style="width: 9%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: right;">dropout</th>
-<th style="text-align: right;">learning_rate</th>
-<th style="text-align: right;">best_validation_accuracy</th>
-<th style="text-align: right;">validation_loss_at_best_accuracy</th>
-<th style="text-align: right;">best_epoch</th>
-<th style="text-align: left;">selected</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">0.2</td>
-<td style="text-align: right;">0.001</td>
-<td style="text-align: right;">0.552</td>
-<td style="text-align: right;">2.757</td>
-<td style="text-align: right;">4</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">0.2</td>
-<td style="text-align: right;">0.000</td>
-<td style="text-align: right;">0.588</td>
-<td style="text-align: right;">3.050</td>
-<td style="text-align: right;">8</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">0.4</td>
-<td style="text-align: right;">0.001</td>
-<td style="text-align: right;">0.588</td>
-<td style="text-align: right;">2.065</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">0.4</td>
-<td style="text-align: right;">0.000</td>
-<td style="text-align: right;">0.571</td>
-<td style="text-align: right;">1.679</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="cell-output-display">
 <div>
 <figure class="figure">
 <p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
@@ -504,7 +447,7 @@ d &amp;= \left\lVert f(x_a)-f(x_b)\right\rVert_2, \\
 \qquad m=1.
 \end{aligned}
 \]</span></p>
-<p>Here, (x_a) and (x_b) are the two input images, (f()) is the shared encoder, and (y=1) for a same-writer pair or (y=0) for a different-writer pair. The margin (m) is 1 in this analysis. The loss pulls same-writer embeddings together and penalises different-writer embeddings when their distance is less than the margin.</p>
+<p>Here, <span class="math inline">\(x_a\)</span> and <span class="math inline">\(x_b\)</span> are the two input images, <span class="math inline">\(f(\cdot)\)</span> is the shared encoder, and <span class="math inline">\(y=1\)</span> for a same-writer pair or <span class="math inline">\(y=0\)</span> for a different-writer pair. The margin <span class="math inline">\(m\)</span> is 1 in this analysis. The loss pulls same-writer embeddings together and penalises different-writer embeddings when their distance is less than the margin.</p>
 <p>We sampled 12,000 training pairs and 2,000 pairs each for validation and testing. The model uses Adam with a learning rate of 0.001, batches of 128, and early stopping on validation loss for up to 15 epochs.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -613,6 +556,65 @@ d &amp;= \left\lVert f(x_a)-f(x_b)\right\rVert_2, \\
 <section id="hyperparameter-optimisation" class="level1" data-number="5">
 <h1 data-number="5"><span class="header-section-number">5</span> Hyperparameter optimisation</h1>
 <p>For the CNN, we compared a 2 × 2 grid of dropout rates (0.2 and 0.4) and Adam learning rates (0.001 and 0.0005). Each configuration was trained with the same random seed and early stopping on session-4 validation accuracy. The table reports each setting’s best validation accuracy, validation loss at that epoch, and best epoch. We chose the setting with the highest validation accuracy and evaluated it on session 5 only after that choice.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>CNN tuning results on the session-4 validation set.</caption>
+<colgroup>
+<col style="width: 7%">
+<col style="width: 18%">
+<col style="width: 23%">
+<col style="width: 31%">
+<col style="width: 10%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Dropout</th>
+<th style="text-align: left;">Adam learning rate</th>
+<th style="text-align: right;">Best validation accuracy</th>
+<th style="text-align: right;">Validation loss at best accuracy</th>
+<th style="text-align: right;">Best epoch</th>
+<th style="text-align: left;">Selected</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.2</td>
+<td style="text-align: left;">0.0010</td>
+<td style="text-align: right;">0.552</td>
+<td style="text-align: right;">2.757</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.2</td>
+<td style="text-align: left;">0.0005</td>
+<td style="text-align: right;">0.588</td>
+<td style="text-align: right;">3.050</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.4</td>
+<td style="text-align: left;">0.0010</td>
+<td style="text-align: right;">0.588</td>
+<td style="text-align: right;">2.065</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.4</td>
+<td style="text-align: left;">0.0005</td>
+<td style="text-align: right;">0.571</td>
+<td style="text-align: right;">1.679</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <p>Validation accuracy varied by 3.6% across the four settings. This small search does not isolate the effect of either parameter, and one seed per setting does not measure seed variability. We held the Siamese architecture and margin fixed; its test results were not used to tune either model.</p>
 </section>
 <section id="comparison-and-critical-discussion" class="level1" data-number="6">
