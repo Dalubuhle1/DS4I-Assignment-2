@@ -242,11 +242,6 @@ cnn_tuning <- cnn_grid %>%
 best_cnn_index <- which.max(cnn_tuning$best_validation_accuracy)
 cnn_tuning <- cnn_tuning %>%
   mutate(selected = row_number() == best_cnn_index)
-knitr::kable(
-  cnn_tuning,
-  digits = 3,
-  caption = "CNN tuning results on the session-4 validation set."
-)
 
 ggplot(
   cnn_tuning,
@@ -755,6 +750,23 @@ Neither protocol tests performance on real handwriting, new digits, or a larger 
 # Hyperparameter optimisation
 
 For the CNN, we compared a 2 × 2 grid of dropout rates (0.2 and 0.4) and Adam learning rates (0.001 and 0.0005). Each configuration was trained with the same random seed and early stopping on session-4 validation accuracy. The table reports each setting’s best validation accuracy, validation loss at that epoch, and best epoch. We chose the setting with the highest validation accuracy and evaluated it on session 5 only after that choice.
+
+```{r}
+knitr::kable(
+  cnn_tuning %>%
+    mutate(learning_rate = formatC(learning_rate, format = "f", digits = 4)),
+  digits = 3,
+  col.names = c(
+    "Dropout",
+    "Adam learning rate",
+    "Best validation accuracy",
+    "Validation loss at best accuracy",
+    "Best epoch",
+    "Selected"
+  ),
+  caption = "CNN tuning results on the session-4 validation set."
+)
+```
 
 Validation accuracy varied by `r scales::percent(diff(range(cnn_tuning$best_validation_accuracy)), accuracy = 0.1)` across the four settings. This small search does not isolate the effect of either parameter, and one seed per setting does not measure seed variability. We held the Siamese architecture and margin fixed; its test results were not used to tune either model.
 
