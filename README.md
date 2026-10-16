@@ -5,9 +5,13 @@ and Siamese neural networks.
 
 ## Render the website
 
-Install the R packages and TensorFlow backend as described at the top of
-[index.qmd](index.qmd), then restart R and render the Quarto website from the
-repository root:
+Run the package-install command at the top of [index.qmd](index.qmd) from R,
+then restart R and run the setup checks there. Run those checks from outside
+the project directory (for example, with the working directory set to
+Downloads) so reticulate can create its managed `r-keras` environment instead
+of selecting the project's unrelated `.venv`. The report explicitly selects
+`r-keras`. These one-time setup steps are not run automatically while
+rendering:
 
 ```sh
 quarto render
